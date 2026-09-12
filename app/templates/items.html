@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}Browse{% endblock %}
+{% block content %}
+<div class="container page">
+
+  <div class="page-head">
+    <h1>Browse</h1>
+    <p class="page-sub">Rate a few things in each category — the more you rate, the sharper your matches and group picks get.</p>
+  </div>
+
+  <div class="filters">
+    <a href="{{ url_for('items.browse') }}" class="{{ 'active' if not active_type }}">All</a>
+    <a href="{{ url_for('items.browse', type='movie') }}" class="{{ 'active' if active_type == 'movie' }}">Movies</a>
+    <a href="{{ url_for('items.browse', type='song') }}" class="{{ 'active' if active_type == 'song' }}">Music</a>
+    <a href="{{ url_for('items.browse', type='team') }}" class="{{ 'active' if active_type == 'team' }}">Sports</a>
+  </div>
+
+  {% if items|length == 0 %}
+    <div class="empty-state">
+      <p>No items yet.</p>
+      <p class="empty-sub">Load some via the TMDB/Spotify/sports clients in <code>app/services/</code>, or insert a few rows manually to test with.</p>
+    </div>
+  {% endif %}
+
+  <div class="item-grid">
+    {% for item in items %}
+      {% set current = user_ratings.get(item['id']) %}
+      <div class="item-card item-card-{{ item['type'] }}">
+        <div class="item-media">
+          {% if item.image_url %}
+            <img src="{{ item.image_url }}" alt="{{ item['title'] }}" loading="lazy">
+          {% else %}
+            <div class="item-placeholder">
+              {% if item['type'] == 'movie' %}🎬{% elif item['type'] == 'song' %}🎵{% else %}🏆{% endif %}
+            </div>
+          {% endif %}
+        </div>
+        <div class="item-card-body">
+          <span class="item-type">{{ item['type'] }}</span>
+          <h3>{{ item['title'] }}</h3>
+          {% if g.user %}
+            <form method="post" action="{{ url_for('items.rate', item_id=item['id']) }}" class="rate-form">
+              <div class="star-rating">
+                {% for r in [5, 4, 3, 2, 1] %}
+                  <input type="radio" id="r{{ r }}-{{ item['id'] }}" name="rating" value="{{ r }}" {{ 'checked' if current == r }}>
+                  <label for="r{{ r }}-{{ item['id'] }}" title="{{ r }} stars">★</label>
+                {% endfor %}
+              </div>
+              <button type="submit" class="btn-ghost">{{ 'Update' if current else 'Rate' }}</button>
+            </form>
+          {% endif %}
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+
+</div>
+{% endblock %}

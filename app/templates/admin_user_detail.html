@@ -1,0 +1,228 @@
+{% extends "base.html" %}
+{% block title %}User: {{ user['username'] }} — Admin Panel{% endblock %}
+{% block content %}
+<div class="container page">
+
+  <div class="page-head" style="margin-bottom: 1rem;">
+    <a href="{{ url_for('admin.users') }}" class="back-link">← Back to Users Directory</a>
+  </div>
+
+  {% include "admin_nav.html" %}
+
+  <!-- User Profile Header Card -->
+  <div class="admin-profile-header">
+    <div class="profile-info-left">
+      <div class="avatar avatar-lg avatar-{{ user['id'] % 3 }}">
+        {% if user['avatar_url'] %}
+          <img src="{{ user['avatar_url'] }}" alt="{{ user['username'] }}">
+        {% else %}
+          {{ user['username'][:1]|upper }}
+        {% endif %}
+      </div>
+      <div class="profile-title-block">
+        <div class="profile-name-row">
+          <h2>{{ user['username'] }}</h2>
+          {% if user['role'] == 'admin' %}
+            <span class="admin-badge">admin</span>
+          {% else %}
+            <span class="user-badge">user</span>
+          {% endif %}
+
+          {% if user['is_active'] %}
+            <span class="status-pill status-active">Active</span>
+          {% else %}
+            <span class="status-pill status-suspended">Suspended</span>
+          {% endif %}
+        </div>
+        <div class="profile-meta-row">
+          <span>📧 {{ user['email'] }}</span>
+          <span class="stat-divider">•</span>
+          <span>📅 Joined {{ user['created_at'] }}</span>
+          <span class="stat-divider">•</span>
+          <span>🆔 User ID: #{{ user['id'] }}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="profile-actions-right">
+      <a href="{{ url_for('recommend.profile', username=user['username']) }}" target="_blank" class="btn-ghost">View Public Profile ↗</a>
+
+      {% if user['id'] != g.user['id'] %}
+        <form method="post" action="{{ url_for('admin.toggle_user_status', user_id=user['id']) }}" style="display:inline;"
+              onsubmit="return confirm('{% if user.is_active %}Suspend {{ user.username }}?{% else %}Reactivate {{ user.username }}?{% endif %}');">
+          {% if user['is_active'] %}
+            <button type="submit" class="btn-action-warn">Suspend Account</button>
+          {% else %}
+            <button type="submit" class="btn-action-success">Reactivate Account</button>
+          {% endif %}
+        </form>
+
+        <form method="post" action="{{ url_for('admin.toggle_user_role', user_id=user['id']) }}" style="display:inline;"
+              onsubmit="return confirm('{% if user.role == 'admin' %}Demote {{ user.username }} to regular user?{% else %}Promote {{ user.username }} to Admin?{% endif %}');">
+          {% if user['role'] == 'admin' %}
+            <button type="submit" class="btn-ghost">Demote to User</button>
+          {% else %}
+            <button type="submit" class="btn-ghost">Promote to Admin</button>
+          {% endif %}
+        </form>
+
+        <form method="post" action="{{ url_for('admin.delete_user', user_id=user['id']) }}" style="display:inline;"
+              onsubmit="return confirm('PERMANENTLY DELETE {{ user.username }}? This will erase all their posts, ratings, and follows.');">
+          <button type="submit" class="btn-action-danger">Delete User</button>
+        </form>
+      {% else %}
+        <span class="badge-you-banner">Currently logged-in account</span>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- User Stats Bar -->
+  <div class="admin-user-stats-bar">
+    <div class="mini-stat">
+      <span class="mini-stat-label">Feed Posts</span>
+      <span class="mini-stat-val">{{ posts|length }}</span>
+    </div>
+    <div class="mini-stat">
+      <span class="mini-stat-label">Ratings Given</span>
+      <span class="mini-stat-val">{{ ratings|length }}</span>
+    </div>
+    <div class="mini-stat">
+      <span class="mini-stat-label">Following</span>
+      <span class="mini-stat-val">{{ following|length }}</span>
+    </div>
+    <div class="mini-stat">
+      <span class="mini-stat-label">Followers</span>
+      <span class="mini-stat-val">{{ followers|length }}</span>
+    </div>
+    <div class="mini-stat">
+      <span class="mini-stat-label">Groups</span>
+      <span class="mini-stat-val">{{ groups|length }}</span>
+    </div>
+  </div>
+
+  <div class="admin-user-activities-grid">
+    <!-- User Posts Column -->
+    <div class="user-activities-section">
+      <div class="section-title-row">
+        <h3 class="section-title-sm" style="margin:0;">User Posts ({{ posts|length }})</h3>
+        <span class="text-muted-sm">Sentiment and content review</span>
+      </div>
+
+      {% if posts %}
+        <div class="user-items-list">
+          {% for p in posts %}
+            <div class="user-post-card">
+              <div class="user-post-top">
+                <div class="user-post-meta">
+                  <span class="sentiment-badge sentiment-{{ p['sentiment_label'] }}">
+                    {{ p['sentiment_label'] }} ({{ "%.2f"|format(p['sentiment_score']) }})
+                  </span>
+                  {% if p['item_title'] %}
+                    <span class="chip chip-{{ p['item_type'] }} chip-xs">{{ p['item_type'] }}: {{ p['item_title'] }}</span>
+                  {% endif %}
+                  <span class="text-muted-sm">{{ p['created_at'] }}</span>
+                </div>
+                <form method="post" action="{{ url_for('admin.delete_post', post_id=p['id']) }}" onsubmit="return confirm('Delete this post?');">
+                  <button type="submit" class="btn-action-danger btn-xs">Delete</button>
+                </form>
+              </div>
+              <p class="user-post-content">{{ p['content'] }}</p>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="empty-state">
+          <p>No posts published yet by this user.</p>
+        </div>
+      {% endif %}
+    </div>
+
+    <!-- User Ratings Column -->
+    <div class="user-activities-section">
+      <div class="section-title-row">
+        <h3 class="section-title-sm" style="margin:0;">User Ratings & Taste ({{ ratings|length }})</h3>
+        <span class="text-muted-sm">Movies, songs, and teams rated</span>
+      </div>
+
+      {% if ratings %}
+        <div class="user-items-list">
+          {% for r in ratings %}
+            <div class="user-rating-card">
+              <div class="rating-card-main">
+                <div class="rating-item-info">
+                  <span class="chip chip-{{ r['item_type'] }} chip-xs">{{ r['item_type'] }}</span>
+                  <strong>{{ r['item_title'] }}</strong>
+                  {% if r['genre_tags'] %}
+                    <span class="text-muted-sm">({{ r['genre_tags'] }})</span>
+                  {% endif %}
+                </div>
+                <div class="rating-stars-display">
+                  <span class="star-gold">★</span> <strong>{{ r['rating'] }}</strong> / 5
+                  <span class="text-muted-sm" style="margin-left: 0.5rem;">{{ r['created_at'][:10] if r['created_at'] else '' }}</span>
+                </div>
+              </div>
+              <form method="post" action="{{ url_for('admin.delete_rating', rating_id=r['id']) }}" onsubmit="return confirm('Remove this rating?');">
+                <button type="submit" class="btn-action-danger btn-xs">Remove</button>
+              </form>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="empty-state">
+          <p>No ratings logged yet by this user.</p>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Social & Group Connections -->
+  <div class="user-connections-grid">
+    <div class="connections-box">
+      <h4>Following ({{ following|length }})</h4>
+      {% if following %}
+        <div class="chips-list">
+          {% for f in following %}
+            <a href="{{ url_for('admin.user_detail', user_id=f['id']) }}" class="chip-user-link">
+              @{{ f['username'] }}
+            </a>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p class="text-muted-sm">Not following anyone yet.</p>
+      {% endif %}
+    </div>
+
+    <div class="connections-box">
+      <h4>Followers ({{ followers|length }})</h4>
+      {% if followers %}
+        <div class="chips-list">
+          {% for f in followers %}
+            <a href="{{ url_for('admin.user_detail', user_id=f['id']) }}" class="chip-user-link">
+              @{{ f['username'] }}
+            </a>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p class="text-muted-sm">No followers yet.</p>
+      {% endif %}
+    </div>
+
+    <div class="connections-box">
+      <h4>Groups ({{ groups|length }})</h4>
+      {% if groups %}
+        <div class="chips-list">
+          {% for g in groups %}
+            <span class="chip-group-item">
+              👥 {{ g['name'] }} {% if g['is_creator'] %}<span class="text-muted-sm">(creator)</span>{% endif %}
+            </span>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p class="text-muted-sm">Not a member of any groups.</p>
+      {% endif %}
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+

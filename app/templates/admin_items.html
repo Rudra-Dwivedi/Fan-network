@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+{% block title %}Catalog Management — Fan Network Admin{% endblock %}
+{% block content %}
+<div class="container page">
+
+  <div class="page-head">
+    <h1>Catalog Management</h1>
+    <p class="page-sub">Manually create and manage movies, songs, and sports teams in the database without requiring external API integrations.</p>
+  </div>
+
+  {% include "admin_nav.html" %}
+
+  <!-- Add New Item Section -->
+  <details class="admin-create-accordion" {% if request.args.get('new') %}open{% endif %}>
+    <summary class="admin-create-summary">
+      <span>➕ Add New Catalog Item Manually</span>
+      <span class="text-muted-sm">Create custom movies, music tracks, or sports teams</span>
+    </summary>
+    <form method="post" action="{{ url_for('admin.create_item') }}" class="admin-create-form">
+      <div class="form-row-3">
+        <label>Media Type
+          <select name="type" required>
+            <option value="movie">Movie</option>
+            <option value="song">Song / Music Track</option>
+            <option value="team">Sports Team / Event</option>
+          </select>
+        </label>
+
+        <label>Title
+          <input type="text" name="title" required placeholder="e.g. Interstellar, Starboy, Arsenal FC">
+        </label>
+
+        <label>Genre Tags <span class="field-optional">(comma-separated)</span>
+          <input type="text" name="genre_tags" placeholder="e.g. sci-fi,thriller or hip-hop or football,EPL">
+        </label>
+      </div>
+
+      <div class="form-row-2">
+        <label>Poster / Album Art / Badge Image URL <span class="field-optional">(leave blank to auto-fetch automatically)</span>
+          <input type="url" name="image_url" placeholder="Auto-fetches high-res poster/art if left blank">
+        </label>
+        <div style="display: flex; align-items: flex-end;">
+          <button type="submit" class="btn btn-small">Save to Catalog</button>
+        </div>
+      </div>
+    </form>
+  </details>
+
+  <!-- Filter & Search Bar -->
+  <div class="admin-filter-bar">
+    <form method="get" action="{{ url_for('admin.items') }}" class="admin-search-form">
+      <div class="search-input-wrap">
+        <input type="text" name="q" value="{{ q }}" placeholder="Search title or genre tags..." autocomplete="off">
+        {% if q %}
+          <a href="{{ url_for('admin.items', type=item_type) }}" class="clear-search-btn">✕</a>
+        {% endif %}
+      </div>
+
+      <div class="filter-controls">
+        <select name="type" onchange="this.form.submit()">
+          <option value="all" {% if item_type == 'all' %}selected{% endif %}>All Types</option>
+          <option value="movie" {% if item_type == 'movie' %}selected{% endif %}>Movies</option>
+          <option value="song" {% if item_type == 'song' %}selected{% endif %}>Songs</option>
+          <option value="team" {% if item_type == 'team' %}selected{% endif %}>Teams</option>
+        </select>
+
+        <button type="submit" class="btn btn-small">Filter</button>
+        {% if q or item_type != 'all' %}
+          <a href="{{ url_for('admin.items') }}" class="btn-ghost btn-small">Reset</a>
+        {% endif %}
+      </div>
+    </form>
+
+    <div class="admin-quick-action-right" style="margin-left: auto; display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap;">
+      <form method="post" action="{{ url_for('admin.auto_fetch_images') }}" onsubmit="this.querySelector('button').disabled=true; this.querySelector('button').innerText='Fetching images...';">
+        <button type="submit" class="btn-action-success btn-small" title="Automatically discover and save missing images for all items that have none">
+          ⚡ Auto-Fetch Missing Images
+        </button>
+      </form>
+      <form method="post" action="{{ url_for('admin.auto_fetch_images') }}" onsubmit="this.querySelector('button').disabled=true; this.querySelector('button').innerText='Upgrading to HD...';">
+        <input type="hidden" name="force" value="1">
+        <button type="submit" class="btn-action-warn btn-small" title="Re-fetch and upgrade all movies, songs, and teams to ultra-high-definition studio posters and artwork">
+          🌟 Upgrade All to HD Artwork
+        </button>
+      </form>
+    </div>
+  </div>
+
+  {% if items %}
+    <div class="table-responsive">
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th style="width: 50px;">Media</th>
+            <th>Title</th>
+            <th>Type</th>
+            <th>Genre Tags</th>
+            <th>Ratings</th>
+            <th>Added</th>
+            <th style="text-align: right;">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in items %}
+            <tr>
+              <td>
+                <div class="admin-item-thumb admin-thumb-{{ item['type'] }}">
+                  {% if item.image_url %}
+                    <img src="{{ item.image_url }}" alt="{{ item['title'] }}" loading="lazy">
+                  {% else %}
+                    <span class="thumb-glyph">
+                      {% if item['type'] == 'movie' %}🎬
+                      {% elif item['type'] == 'song' %}🎵
+                      {% elif item['type'] == 'team' %}⚽
+                      {% endif %}
+                    </span>
+                  {% endif %}
+                </div>
+              </td>
+              <td>
+                <strong>{{ item['title'] }}</strong>
+              </td>
+              <td>
+                <span class="chip chip-{{ item['type'] }} chip-xs">{{ item['type'] }}</span>
+              </td>
+              <td class="text-muted-sm">
+                {{ item['genre_tags'] or '—' }}
+              </td>
+              <td>
+                {% if item['rating_count'] %}
+                  <span class="star-gold">★</span> {{ item['avg_rating'] }} <span class="text-muted-sm">({{ item['rating_count'] }})</span>
+                {% else %}
+                  <span class="text-muted-sm">No ratings</span>
+                {% endif %}
+              </td>
+              <td class="text-muted-sm">
+                {{ item['created_at'][:10] if item['created_at'] else '—' }}
+              </td>
+              <td style="text-align: right;">
+                <form method="post" action="{{ url_for('admin.delete_item', item_id=item['id']) }}" style="display:inline;"
+                      onsubmit="return confirm('Delete {{ item.title }} from catalog? All user ratings on this item will also be removed.');">
+                  <button type="submit" class="btn-action-danger btn-xs">Delete</button>
+                </form>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div class="empty-state">
+      <p>No items found matching your search or filter.</p>
+      <p class="empty-sub"><a href="{{ url_for('admin.items') }}" class="link-underline">Clear filters</a> or use the form above to add a new item.</p>
+    </div>
+  {% endif %}
+
+</div>
+{% endblock %}
+

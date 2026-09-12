@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+{% block title %}@{{ profile_user['username'] }} — Fan Network{% endblock %}
+{% block content %}
+<div class="container page">
+
+  <!-- Public Profile Header -->
+  <div class="public-profile-card">
+    <div class="public-profile-top">
+      <div class="avatar avatar-lg avatar-{{ profile_user['id'] % 3 }}">
+        {% if profile_user['avatar_url'] %}
+          <img src="{{ profile_user['avatar_url'] }}" alt="{{ profile_user['username'] }}">
+        {% else %}
+          {{ profile_user['username'][0]|upper }}
+        {% endif %}
+      </div>
+      <div class="public-profile-info">
+        <div class="public-name-row">
+          <h1>{{ profile_user['username'] }}</h1>
+          {% if profile_user['role'] == 'admin' %}
+            <span class="admin-badge">admin</span>
+          {% endif %}
+          {% if not profile_user['is_active'] %}
+            <span class="status-pill status-suspended">Account Suspended</span>
+          {% endif %}
+        </div>
+        <p class="text-muted-sm" style="margin: 0.2rem 0 0.6rem;">
+          Member since {{ profile_user['created_at'][:10] if profile_user['created_at'] else 'early adopter' }}
+        </p>
+        <div class="public-stats-row">
+          <span><strong>{{ ratings|length }}</strong> ratings</span>
+          <span class="stat-divider">•</span>
+          <span><strong>{{ posts|length }}</strong> posts</span>
+          <span class="stat-divider">•</span>
+          <span><strong>{{ followers_count }}</strong> followers</span>
+          <span class="stat-divider">•</span>
+          <span><strong>{{ following_count }}</strong> following</span>
+        </div>
+      </div>
+
+      <div class="public-profile-actions">
+        {% if g.user and g.user['id'] == profile_user['id'] %}
+          <a href="{{ url_for('auth.profile') }}" class="btn btn-small">
+            📷 Edit Profile Photo
+          </a>
+        {% endif %}
+
+        {% if g.user and g.user['id'] != profile_user['id'] %}
+          {% if is_following %}
+            <form method="post" action="{{ url_for('recommend.unfollow', user_id=profile_user['id']) }}">
+              <button type="submit" class="btn-ghost btn-small">Following ✓ (Unfollow)</button>
+            </form>
+          {% else %}
+            <form method="post" action="{{ url_for('recommend.follow', user_id=profile_user['id']) }}">
+              <button type="submit" class="btn btn-small">+ Follow</button>
+            </form>
+          {% endif %}
+        {% endif %}
+
+        {% if g.user and g.user['role'] == 'admin' %}
+          <a href="{{ url_for('admin.user_detail', user_id=profile_user['id']) }}" class="btn-ghost btn-small" title="Manage this account in Admin Console">
+            ⚙️ Admin View
+          </a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Profile Content Columns -->
+  <div class="profile-layout-grid">
+    <!-- Left Column: User's Ratings & Taste -->
+    <div class="profile-col-main">
+      <h2 class="section-title-sm">Taste & Ratings ({{ ratings|length }})</h2>
+
+      {% if ratings %}
+        <div class="profile-ratings-grid">
+          {% for r in ratings %}
+            <div class="profile-rating-tile profile-rating-{{ r['type'] }}">
+              <div class="profile-tile-media">
+                {% if r.image_url %}
+                  <img src="{{ r.image_url }}" alt="{{ r['title'] }}" loading="lazy">
+                {% else %}
+                  <span class="thumb-glyph">
+                    {% if r['type'] == 'movie' %}🎬
+                    {% elif r['type'] == 'song' %}🎵
+                    {% elif r['type'] == 'team' %}⚽
+                    {% endif %}
+                  </span>
+                {% endif %}
+              </div>
+              <div class="profile-tile-info">
+                <span class="chip chip-{{ r['type'] }} chip-xs">{{ r['type'] }}</span>
+                <strong class="tile-title">{{ r['title'] }}</strong>
+                <div class="tile-stars">
+                  <span class="star-gold">★</span> <strong>{{ r['rating'] }}</strong> / 5
+                </div>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="empty-state">
+          <p>No ratings logged yet by this user.</p>
+        </div>
+      {% endif %}
+    </div>
+
+    <!-- Right Column: Recent Posts -->
+    <div class="profile-col-side">
+      <h2 class="section-title-sm">Recent Posts ({{ posts|length }})</h2>
+
+      {% if posts %}
+        <ul class="profile-posts-list">
+          {% for p in posts %}
+            <li class="feed-post sentiment-{{ p['sentiment_label'] }} {% if p['is_pinned'] %}feed-post-pinned{% endif %}" style="padding: 0.9rem;">
+              <div class="feed-post-body">
+                <div class="feed-post-meta">
+                  {% if p['is_pinned'] %}
+                    <span class="badge-pinned-tag">📌 Announcement</span>
+                  {% endif %}
+                  {% if p['item_title'] %}
+                    <span class="item-tag">on {{ p['item_title'] }}</span>
+                  {% endif %}
+                  <span class="sentiment-badge">{{ p['sentiment_label'] }}</span>
+                  <span class="text-muted-sm" style="margin-left: auto;">{{ p['created_at'][:10] }}</span>
+                </div>
+                <p class="feed-post-text">{{ p['content'] }}</p>
+              </div>
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <div class="empty-state">
+          <p>No community posts yet.</p>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+

@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}Settings{% endblock %}
+{% block content %}
+<div class="container page">
+
+  <div class="page-head">
+    <h1>API keys & Data Ingestion</h1>
+    <p class="page-sub">Add your own keys to pull real movies, music, and teams instead of the seeded demo data. Keys are stored in the database — nothing to edit in code.</p>
+  </div>
+
+  {% set active_tab = 'settings' %}
+  {% include "admin_nav.html" %}
+
+  <form method="post" class="settings-form">
+    <div class="settings-group">
+      <h3>TMDB <span class="item-type">movies</span></h3>
+      <label>API key
+        <input type="password" name="tmdb_api_key" placeholder="{{ saved.TMDB_API_KEY or 'Not set' }}" autocomplete="off">
+      </label>
+      <p class="field-hint">Free key at <a class="link-underline" href="https://www.themoviedb.org/settings/api" target="_blank" rel="noopener">themoviedb.org/settings/api</a></p>
+    </div>
+
+    <div class="settings-group">
+      <h3>Spotify <span class="item-type">music</span></h3>
+      <label>Client ID
+        <input type="password" name="spotify_client_id" placeholder="{{ saved.SPOTIFY_CLIENT_ID or 'Not set' }}" autocomplete="off">
+      </label>
+      <label>Client secret
+        <input type="password" name="spotify_client_secret" placeholder="{{ saved.SPOTIFY_CLIENT_SECRET or 'Not set' }}" autocomplete="off">
+      </label>
+      <p class="field-hint">Create an app at <a class="link-underline" href="https://developer.spotify.com/dashboard" target="_blank" rel="noopener">developer.spotify.com/dashboard</a></p>
+    </div>
+
+    <div class="settings-group">
+      <h3>Sports data <span class="item-type">teams</span></h3>
+      <label>API key <span class="field-optional">(optional — default provider needs none)</span>
+        <input type="password" name="sports_api_key" placeholder="{{ saved.SPORTS_API_KEY or 'Not set' }}" autocomplete="off">
+      </label>
+      <p class="field-hint">Only needed if you swap in a different provider than the default (TheSportsDB).</p>
+    </div>
+
+    <button type="submit" class="btn">Save keys</button>
+  </form>
+
+  <h2 class="section-title-sm">Load real data</h2>
+  <p class="page-sub">Once your keys are saved, pull sample content straight into the app.</p>
+
+  <div class="fetch-grid">
+    <form method="post" action="{{ url_for('settings.fetch_movies') }}" class="fetch-card fetch-card-movies">
+      <h3>Popular movies</h3>
+      <p>Pulls the current popular list from TMDB.</p>
+      <button type="submit" class="btn-ghost">Fetch movies</button>
+    </form>
+
+    <form method="post" action="{{ url_for('settings.fetch_music') }}" class="fetch-card fetch-card-music">
+      <h3>Search tracks</h3>
+      <p>Search by artist, song, or genre — pulls matching tracks straight from Spotify.</p>
+      <input type="text" name="query" placeholder="e.g. Arijit Singh, lofi chill, Taylor Swift">
+      <button type="submit" class="btn-ghost">Fetch tracks</button>
+    </form>
+
+    <form method="post" action="{{ url_for('settings.fetch_sports') }}" class="fetch-card fetch-card-sports">
+      <h3>Teams by league</h3>
+      <p>Enter a league name to pull its teams.</p>
+      <input type="text" name="league" placeholder="e.g. English Premier League">
+      <button type="submit" class="btn-ghost">Fetch teams</button>
+    </form>
+  </div>
+
+</div>
+{% endblock %}

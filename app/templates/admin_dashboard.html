@@ -1,0 +1,183 @@
+{% extends "base.html" %}
+{% block title %}Admin Dashboard — Fan Network{% endblock %}
+{% block content %}
+<div class="container page">
+
+  <div class="page-head">
+    <h1>Admin Control Panel</h1>
+    <p class="page-sub">Monitor platform health, manage user accounts, inspect sentiment, and moderate community activities.</p>
+  </div>
+
+  {% include "admin_nav.html" %}
+
+  <div class="admin-stats-grid">
+    <!-- Users Metric -->
+    <div class="stat-card">
+      <div class="stat-header">
+        <span class="stat-title">Users</span>
+        <span class="stat-icon">👥</span>
+      </div>
+      <div class="stat-value">{{ user_counts['total'] }}</div>
+      <div class="stat-sub">
+        <span class="badge-dot badge-active"></span> {{ user_counts['active'] or 0 }} active
+        <span class="stat-divider">•</span>
+        <span class="badge-dot badge-suspended"></span> {{ user_counts['suspended'] or 0 }} suspended
+        <span class="stat-divider">•</span>
+        <span>{{ user_counts['admins'] or 0 }} admin</span>
+      </div>
+      <a href="{{ url_for('admin.users') }}" class="stat-link">Manage users →</a>
+    </div>
+
+    <!-- Posts Metric -->
+    <div class="stat-card">
+      <div class="stat-header">
+        <span class="stat-title">Community Posts</span>
+        <span class="stat-icon">💬</span>
+      </div>
+      <div class="stat-value">{{ post_counts['total'] }}</div>
+      <div class="stat-sub">
+        <span class="tag-pos">{{ post_counts['positive'] or 0 }} pos</span>
+        <span class="stat-divider">•</span>
+        <span class="tag-neu">{{ post_counts['neutral'] or 0 }} neu</span>
+        <span class="stat-divider">•</span>
+        <span class="tag-neg">{{ post_counts['negative'] or 0 }} neg</span>
+      </div>
+      <a href="{{ url_for('admin.posts') }}" class="stat-link">Moderate posts →</a>
+    </div>
+
+    <!-- Ratings Metric -->
+    <div class="stat-card">
+      <div class="stat-header">
+        <span class="stat-title">Ratings Logged</span>
+        <span class="stat-icon">⭐</span>
+      </div>
+      <div class="stat-value">{{ pref_counts['total'] }}</div>
+      <div class="stat-sub">
+        <span>Avg score: <strong>{{ pref_counts['avg_rating'] or 'N/A' }}</strong> / 5.0</span>
+      </div>
+      <a href="{{ url_for('admin.ratings') }}" class="stat-link">View ratings →</a>
+    </div>
+
+    <!-- Catalog Items Metric -->
+    <div class="stat-card">
+      <div class="stat-header">
+        <span class="stat-title">Catalog Items</span>
+        <span class="stat-icon">🎬</span>
+      </div>
+      <div class="stat-value">{{ item_counts['total'] }}</div>
+      <div class="stat-sub">
+        <span>{{ item_counts['movies'] or 0 }} movies</span>
+        <span class="stat-divider">•</span>
+        <span>{{ item_counts['songs'] or 0 }} songs</span>
+        <span class="stat-divider">•</span>
+        <span>{{ item_counts['teams'] or 0 }} teams</span>
+      </div>
+      <a href="{{ url_for('settings.api_keys') }}" class="stat-link">Fetch more data →</a>
+    </div>
+  </div>
+
+  <div class="admin-dashboard-layout">
+    <div class="admin-main-col">
+      <div class="section-title-row">
+        <h2 class="section-title-sm" style="margin: 0;">Live Activity Stream</h2>
+        <span class="text-muted-sm">Latest actions across Fan Network</span>
+      </div>
+
+      {% if events %}
+        <div class="activity-timeline">
+          {% for ev in events %}
+            <div class="activity-card activity-card-{{ ev['type'] }}">
+              <div class="activity-icon-col">
+                {% if ev['type'] == 'signup' %}
+                  <span class="activity-glyph glyph-signup">👤</span>
+                {% elif ev['type'] == 'post' %}
+                  <span class="activity-glyph glyph-post">💬</span>
+                {% elif ev['type'] == 'rating' %}
+                  <span class="activity-glyph glyph-rating">⭐</span>
+                {% endif %}
+              </div>
+              <div class="activity-content-col">
+                <div class="activity-meta">
+                  <a href="{{ url_for('admin.user_detail', user_id=ev['user_id']) }}" class="activity-user">
+                    {{ ev['username'] }}
+                  </a>
+                  <span class="activity-action-label">
+                    {% if ev['type'] == 'signup' %}joined the network
+                    {% elif ev['type'] == 'post' %}posted in feed
+                    {% elif ev['type'] == 'rating' %}rated an item
+                    {% endif %}
+                  </span>
+                  {% if ev['type'] == 'post' %}
+                    <span class="sentiment-badge sentiment-{{ ev['sentiment'] }}">
+                      {{ ev['sentiment'] }} ({{ "%.2f"|format(ev['score']) }})
+                    </span>
+                  {% endif %}
+                  <span class="activity-time">{{ ev['time'] }}</span>
+                </div>
+
+                <div class="activity-detail">
+                  {% if ev['type'] == 'post' %}
+                    <span class="post-preview-text">"{{ ev['detail'] }}"</span>
+                    {% if ev['item_title'] %}
+                      <span class="item-tag">about {{ ev['item_title'] }}</span>
+                    {% endif %}
+                  {% else %}
+                    {{ ev['detail'] }}
+                  {% endif %}
+                </div>
+              </div>
+              <div class="activity-action-col">
+                {% if ev['type'] == 'post' %}
+                  <form method="post" action="{{ url_for('admin.delete_post', post_id=ev['post_id']) }}" onsubmit="return confirm('Delete this post?');">
+                    <button type="submit" class="btn-action-danger btn-xs" title="Delete post">Delete</button>
+                  </form>
+                {% elif ev['type'] == 'rating' %}
+                  <form method="post" action="{{ url_for('admin.delete_rating', rating_id=ev['rating_id']) }}" onsubmit="return confirm('Delete this rating?');">
+                    <button type="submit" class="btn-action-danger btn-xs" title="Remove rating">Remove</button>
+                  </form>
+                {% elif ev['type'] == 'signup' %}
+                  <a href="{{ url_for('admin.user_detail', user_id=ev['user_id']) }}" class="btn-ghost btn-xs">Profile</a>
+                {% endif %}
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="empty-state">
+          <p>No recorded user activities yet.</p>
+          <p class="empty-sub">Once users start registering, posting, and rating, events will appear here in real time.</p>
+        </div>
+      {% endif %}
+    </div>
+
+    <div class="admin-side-col">
+      <h2 class="section-title-sm" style="margin: 0 0 1rem;">Quick Controls</h2>
+      <div class="quick-links-card">
+        <a href="{{ url_for('admin.users') }}" class="quick-link-item">
+          <strong>👥 User Directory</strong>
+          <span>Inspect users, ban/suspend accounts, promote admins</span>
+        </a>
+        <a href="{{ url_for('admin.posts') }}" class="quick-link-item">
+          <strong>💬 Post Moderation</strong>
+          <span>Filter toxic or negative content and delete posts</span>
+        </a>
+        <a href="{{ url_for('admin.ratings') }}" class="quick-link-item">
+          <strong>⭐ Rating Records</strong>
+          <span>Review ratings breakdown and remove spam</span>
+        </a>
+        <a href="{{ url_for('settings.api_keys') }}" class="quick-link-item">
+          <strong>⚙️ API Integrations</strong>
+          <span>Sync content from TMDB, Spotify, and Sports API</span>
+        </a>
+      </div>
+
+      <div class="admin-info-box">
+        <h4>Admin Security Note</h4>
+        <p>Admin privileges grant access to user moderation and database settings. To create additional administrators, use the Role toggle in User Management or run <code>create_admin.py</code>.</p>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+

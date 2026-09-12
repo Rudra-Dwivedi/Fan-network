@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block title %}Feed{% endblock %}
+{% block content %}
+<div class="container page">
+
+  <div class="page-head">
+    <h1>Community feed</h1>
+    <p class="page-sub">What people are saying about the movies, music, and teams they've rated.</p>
+  </div>
+
+  {% if g.user %}
+    <form method="post" class="composer">
+      <div class="avatar avatar-{{ g.user['id'] % 3 }}">
+        {% if g.user['avatar_url'] %}
+          <img src="{{ g.user['avatar_url'] }}" alt="{{ g.user['username'] }}">
+        {% else %}
+          {{ g.user['username'][0]|upper }}
+        {% endif %}
+      </div>
+      <div class="composer-fields">
+        <textarea name="content" rows="2" required placeholder="e.g. That new album is a masterpiece, honestly one of the best this year"></textarea>
+        <div class="composer-actions">
+          <select name="item_id">
+            <option value="">Tag an item (optional)</option>
+            {% for item in items %}
+              <option value="{{ item['id'] }}">{{ item['title'] }}</option>
+            {% endfor %}
+          </select>
+          {% if g.user['role'] == 'admin' %}
+            <label class="checkbox-pin" title="Pin this post to the top as an official announcement for all members">
+              <input type="checkbox" name="is_pinned" value="1"> 📌 Pin Announcement
+            </label>
+          {% endif %}
+          <button type="submit" class="btn btn-small">Post</button>
+        </div>
+      </div>
+    </form>
+  {% else %}
+    <div class="empty-state">
+      <p><a href="{{ url_for('auth.login') }}" class="link-underline">Log in</a> to post.</p>
+    </div>
+  {% endif %}
+
+  <ul class="feed-list">
+    {% for post in posts %}
+      <li class="feed-post sentiment-{{ post.sentiment_label }} {% if post.is_pinned %}feed-post-pinned{% endif %}">
+        {% if post.is_pinned %}
+          <div class="pinned-banner">
+            <span>📌 OFFICIAL ADMIN ANNOUNCEMENT</span>
+          </div>
+        {% endif %}
+        <div class="feed-post-main">
+          <div class="avatar avatar-{{ post.user_id % 3 }}">
+            {% if post.avatar_url %}
+              <img src="{{ post.avatar_url }}" alt="{{ post.username }}">
+            {% else %}
+              {{ post.username[0]|upper }}
+            {% endif %}
+          </div>
+          <div class="feed-post-body">
+            <div class="feed-post-meta">
+              <a href="{{ url_for('recommend.profile', username=post.username) }}" class="feed-author-link">
+                {{ post.username }}
+              </a>
+              {% if post.user_role == 'admin' %}
+                <span class="admin-badge" style="font-size: 0.6rem; padding: 0.05rem 0.35rem;">admin</span>
+              {% endif %}
+              {% if post.item_title %}<span class="item-tag">on {{ post.item_title }}</span>{% endif %}
+              <span class="sentiment-badge">{{ post.sentiment_label }}</span>
+              <span class="text-muted-sm" style="margin-left: auto;">{{ post.created_at[:16] if post.created_at else '' }}</span>
+            </div>
+            <p class="feed-post-text">{{ post.content }}</p>
+          </div>
+        </div>
+      </li>
+    {% endfor %}
+  </ul>
+
+</div>
+{% endblock %}

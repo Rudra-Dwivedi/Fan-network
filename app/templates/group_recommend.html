@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+{% block title %}Group pick{% endblock %}
+{% block content %}
+<div class="container page">
+
+  <div class="page-head">
+    <h1>What should the group watch or listen to?</h1>
+    <p class="page-sub">Pick your group and a strategy — you're always included automatically.</p>
+  </div>
+
+  <form method="post" class="group-form">
+    <fieldset class="chip-field">
+      <legend>Group members (people you follow)</legend>
+      <div class="chip-options">
+        {% if all_users %}
+          {% for u in all_users %}
+            {% if u['id'] != g.user['id'] %}
+              <label class="chip-toggle">
+                <input type="checkbox" name="user_ids" value="{{ u['id'] }}"
+                  {{ 'checked' if u['id'] in selected_ids }}>
+                <span>{{ u['username'] }}</span>
+              </label>
+            {% endif %}
+          {% endfor %}
+        {% else %}
+          <span class="text-muted-sm" style="padding: 0.3rem 0.5rem;">
+            You aren't following anyone yet. <a href="{{ url_for('recommend.people') }}" class="link-underline">Find people with similar taste</a> to follow and pick recommendations together!
+          </span>
+        {% endif %}
+      </div>
+    </fieldset>
+
+    <div class="group-form-row">
+      <fieldset class="chip-field">
+        <legend>Category</legend>
+        <div class="chip-options">
+          <label class="chip-toggle chip-radio">
+            <input type="radio" name="item_type" value="" {{ 'checked' if not item_type }}>
+            <span>Any</span>
+          </label>
+          <label class="chip-toggle chip-radio">
+            <input type="radio" name="item_type" value="movie" {{ 'checked' if item_type == 'movie' }}>
+            <span>Movies</span>
+          </label>
+          <label class="chip-toggle chip-radio">
+            <input type="radio" name="item_type" value="song" {{ 'checked' if item_type == 'song' }}>
+            <span>Music</span>
+          </label>
+          <label class="chip-toggle chip-radio">
+            <input type="radio" name="item_type" value="team" {{ 'checked' if item_type == 'team' }}>
+            <span>Sports</span>
+          </label>
+        </div>
+      </fieldset>
+
+      <fieldset class="chip-field">
+        <legend>Strategy</legend>
+        <div class="chip-options">
+          <label class="chip-toggle chip-radio">
+            <input type="radio" name="strategy" value="average" {{ 'checked' if strategy == 'average' }}>
+            <span>Average — maximize overall happiness</span>
+          </label>
+          <label class="chip-toggle chip-radio">
+            <input type="radio" name="strategy" value="least_misery" {{ 'checked' if strategy == 'least_misery' }}>
+            <span>Least misery — avoid anyone hating it</span>
+          </label>
+        </div>
+      </fieldset>
+    </div>
+
+    <button type="submit" class="btn">Get recommendation</button>
+  </form>
+
+  {% if winner %}
+
+    <div class="winner-card winner-card-{{ winner.type }}">
+      <span class="winner-ribbon">Top pick</span>
+      <div class="winner-media">
+        {% if winner.image_url %}
+          <img src="{{ winner.image_url }}" alt="{{ winner.title }}" loading="lazy">
+        {% else %}
+          <span class="winner-placeholder">{% if winner.type == 'movie' %}🎬{% elif winner.type == 'song' %}🎵{% else %}🏆{% endif %}</span>
+        {% endif %}
+      </div>
+      <div class="winner-body">
+        <span class="item-type">{{ winner.type }}</span>
+        <h2 class="winner-title">{{ winner.title }}</h2>
+        <div class="winner-score-row">
+          <div class="winner-score-circle" style="--pct: {{ (winner.score / 5 * 100)|round|int }}">
+            <span>{{ winner.score }}</span>
+          </div>
+          <p class="winner-explanation">{{ explanation }}</p>
+        </div>
+
+        <div class="winner-members">
+          {% for member, score in winner_members %}
+            <div class="winner-member">
+              <div class="avatar avatar-{{ member['id'] % 3 }}">
+                {% if member['avatar_url'] %}
+                  <img src="{{ member['avatar_url'] }}" alt="{{ member['username'] }}">
+                {% else %}
+                  {{ member['username'][0]|upper }}
+                {% endif %}
+              </div>
+              <span class="winner-member-name">{{ member['username'] }}</span>
+              <div class="meter meter-sm">
+                <span class="meter-fill" style="--fill: {{ (score / 5 * 100)|round|int }}%"></span>
+              </div>
+              <span class="winner-member-score">{{ score }}</span>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    {% if runner_ups %}
+      <h2 class="section-title-sm">Other strong options</h2>
+      <ol class="rec-list" start="2">
+        {% for rec in runner_ups %}
+          <li class="rec-card">
+            <span class="rec-rank">{{ loop.index + 1 }}</span>
+            <div class="rec-thumb rec-thumb-{{ rec.type }}">
+              {% if rec.image_url %}
+                <img src="{{ rec.image_url }}" alt="{{ rec.title }}" loading="lazy">
+              {% else %}
+                <span>{% if rec.type == 'movie' %}🎬{% elif rec.type == 'song' %}🎵{% else %}🏆{% endif %}</span>
+              {% endif %}
+            </div>
+            <div class="rec-info">
+              <div class="rec-title-row">
+                <strong>{{ rec.title }}</strong>
+                <span class="item-type">{{ rec.type }}</span>
+              </div>
+              <div class="meter">
+                <span class="meter-fill" style="--fill: {{ (rec.score / 5 * 100)|round|int }}%"></span>
+              </div>
+              <span class="meter-label">group score {{ rec.score }} / 5</span>
+            </div>
+          </li>
+        {% endfor %}
+      </ol>
+    {% endif %}
+
+  {% elif request.method == 'POST' %}
+    <div class="empty-state">
+      <p>No items matched that category yet.</p>
+      <p class="empty-sub">Try "Any" category, or add more items via Browse / Settings first.</p>
+    </div>
+  {% endif %}
+
+</div>
+{% endblock %}

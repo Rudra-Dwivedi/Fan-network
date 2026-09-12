@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}Find people{% endblock %}
+{% block content %}
+<div class="container page">
+
+  <div class="page-head">
+    <h1>People with taste like yours</h1>
+    <p class="page-sub">Ranked by how closely their ratings line up with yours — the biggest match, not just the same people you already follow elsewhere.</p>
+  </div>
+
+  {% if matches|length == 0 %}
+    <div class="empty-state">
+      <p>Not enough data yet.</p>
+      <p class="empty-sub">Rate a few movies, songs, and teams first — and make sure other users have rated things too.</p>
+    </div>
+  {% endif %}
+
+  <ul class="match-list">
+    {% for m in matches %}
+      <li class="match-card">
+        <div class="avatar avatar-{{ m.user['id'] % 3 }}">
+          {% if m.user['avatar_url'] %}
+            <img src="{{ m.user['avatar_url'] }}" alt="{{ m.user['username'] }}">
+          {% else %}
+            {{ m.user['username'][0]|upper }}
+          {% endif %}
+        </div>
+        <div class="match-info">
+          <strong>{{ m.user['username'] }}</strong>
+          <div class="meter">
+            <span class="meter-fill" style="--fill: {{ (m.score * 100)|round|int }}%"></span>
+          </div>
+          <span class="meter-label">{{ (m.score * 100)|round|int }}% taste match</span>
+        </div>
+        {% if m.following %}
+          <form method="post" action="{{ url_for('recommend.unfollow', user_id=m.user['id']) }}">
+            <button type="submit" class="btn-ghost">Following</button>
+          </form>
+        {% else %}
+          <form method="post" action="{{ url_for('recommend.follow', user_id=m.user['id']) }}">
+            <button type="submit" class="btn btn-small">Follow</button>
+          </form>
+        {% endif %}
+      </li>
+    {% endfor %}
+  </ul>
+
+</div>
+{% endblock %}

@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Log in{% endblock %}
+{% block content %}
+<div class="container page">
+
+  <h1>Log in</h1>
+  <form method="post" class="form">
+    <label>Username <input name="username" required></label>
+    <label>Password <input type="password" name="password" required></label>
+    <button type="submit">Log in</button>
+  </form>
+  <p class="field-hint admin-back-link"><a class="link-underline" href="{{ url_for('admin.login') }}">Admin? Log in here →</a></p>
+
+</div>
+{% endblock %}

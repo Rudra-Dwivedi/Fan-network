@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+{% block title %}User Management — Fan Network Admin{% endblock %}
+{% block content %}
+<div class="container page">
+
+  <div class="page-head">
+    <h1>User Management</h1>
+    <p class="page-sub">Manage accounts, inspect activity metrics, toggle administrative roles, and suspend or delete problematic users.</p>
+  </div>
+
+  {% include "admin_nav.html" %}
+
+  <div class="admin-filter-bar">
+    <form method="get" action="{{ url_for('admin.users') }}" class="admin-search-form">
+      <div class="search-input-wrap">
+        <input type="text" name="q" value="{{ q }}" placeholder="Search username or email..." autocomplete="off">
+        {% if q %}
+          <a href="{{ url_for('admin.users', role=role, status=status) }}" class="clear-search-btn">✕</a>
+        {% endif %}
+      </div>
+
+      <div class="filter-controls">
+        <select name="role" onchange="this.form.submit()">
+          <option value="all" {% if role == 'all' %}selected{% endif %}>All Roles</option>
+          <option value="admin" {% if role == 'admin' %}selected{% endif %}>Admins Only</option>
+          <option value="user" {% if role == 'user' %}selected{% endif %}>Regular Users</option>
+        </select>
+
+        <select name="status" onchange="this.form.submit()">
+          <option value="all" {% if status == 'all' %}selected{% endif %}>All Statuses</option>
+          <option value="active" {% if status == 'active' %}selected{% endif %}>Active</option>
+          <option value="suspended" {% if status == 'suspended' %}selected{% endif %}>Suspended</option>
+        </select>
+
+        <button type="submit" class="btn btn-small">Filter</button>
+        {% if q or role != 'all' or status != 'all' %}
+          <a href="{{ url_for('admin.users') }}" class="btn-ghost btn-small">Reset</a>
+        {% endif %}
+      </div>
+    </form>
+  </div>
+
+  {% if users %}
+    <div class="table-responsive">
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>User</th>
+            <th>Email</th>
+            <th>Role</th>
+            <th>Status</th>
+            <th>Posts</th>
+            <th>Ratings</th>
+            <th>Joined</th>
+            <th style="text-align: right;">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for u in users %}
+            <tr class="{% if not u['is_active'] %}row-suspended{% endif %}">
+              <td>
+                <div class="user-cell">
+                  <div class="avatar avatar-sm avatar-{{ u['id'] % 3 }}">
+                    {% if u['avatar_url'] %}
+                      <img src="{{ u['avatar_url'] }}" alt="{{ u['username'] }}">
+                    {% else %}
+                      {{ u['username'][:1]|upper }}
+                    {% endif %}
+                  </div>
+                  <div>
+                    <a href="{{ url_for('admin.user_detail', user_id=u['id']) }}" class="table-username">
+                      {{ u['username'] }}
+                    </a>
+                    {% if u['id'] == g.user['id'] %}
+                      <span class="badge-you">(You)</span>
+                    {% endif %}
+                  </div>
+                </div>
+              </td>
+              <td class="text-muted-sm">{{ u['email'] }}</td>
+              <td>
+                {% if u['role'] == 'admin' %}
+                  <span class="admin-badge">admin</span>
+                {% else %}
+                  <span class="user-badge">user</span>
+                {% endif %}
+              </td>
+              <td>
+                {% if u['is_active'] %}
+                  <span class="status-pill status-active">Active</span>
+                {% else %}
+                  <span class="status-pill status-suspended">Suspended</span>
+                {% endif %}
+              </td>
+              <td>{{ u['post_count'] }}</td>
+              <td>{{ u['rating_count'] }}</td>
+              <td class="text-muted-sm">{{ u['created_at'][:10] if u['created_at'] else '—' }}</td>
+              <td>
+                <div class="action-buttons-group">
+                  <a href="{{ url_for('recommend.profile', username=u['username']) }}" target="_blank" class="btn-ghost btn-xs" title="View public profile">
+                    Public ↗
+                  </a>
+                  <a href="{{ url_for('admin.user_detail', user_id=u['id']) }}" class="btn-ghost btn-xs" title="View details and activities">
+                    Details
+                  </a>
+
+                  {% if u['id'] != g.user['id'] %}
+                    <!-- Status Toggle Form -->
+                    <form method="post" action="{{ url_for('admin.toggle_user_status', user_id=u['id']) }}" style="display:inline;"
+                          onsubmit="return confirm('{% if u.is_active %}Are you sure you want to suspend {{ u.username }}? They will not be able to log in.{% else %}Reactivate {{ u.username }}?{% endif %}');">
+                      {% if u['is_active'] %}
+                        <button type="submit" class="btn-action-warn btn-xs" title="Suspend user">Suspend</button>
+                      {% else %}
+                        <button type="submit" class="btn-action-success btn-xs" title="Activate user">Activate</button>
+                      {% endif %}
+                    </form>
+
+                    <!-- Role Toggle Form -->
+                    <form method="post" action="{{ url_for('admin.toggle_user_role', user_id=u['id']) }}" style="display:inline;"
+                          onsubmit="return confirm('{% if u.role == 'admin' %}Demote {{ u.username }} to regular user?{% else %}Promote {{ u.username }} to Admin?{% endif %}');">
+                      {% if u['role'] == 'admin' %}
+                        <button type="submit" class="btn-ghost btn-xs" title="Demote to regular user">Demote</button>
+                      {% else %}
+                        <button type="submit" class="btn-ghost btn-xs" title="Promote to admin">Make Admin</button>
+                      {% endif %}
+                    </form>
+
+                    <!-- Delete Form -->
+                    <form method="post" action="{{ url_for('admin.delete_user', user_id=u['id']) }}" style="display:inline;"
+                          onsubmit="return confirm('CAUTION: Permanently delete user {{ u.username }} and all their posts, ratings, and follows? This cannot be undone.');">
+                      <button type="submit" class="btn-action-danger btn-xs" title="Permanently delete user">Delete</button>
+                    </form>
+                  {% endif %}
+                </div>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div class="empty-state">
+      <p>No users found matching your search or filters.</p>
+      <p class="empty-sub"><a href="{{ url_for('admin.users') }}" class="link-underline">Clear all filters</a> to see all registered users.</p>
+    </div>
+  {% endif %}
+
+</div>
+{% endblock %}
+

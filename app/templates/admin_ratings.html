@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+{% block title %}Ratings & Preferences — Fan Network Admin{% endblock %}
+{% block content %}
+<div class="container page">
+
+  <div class="page-head">
+    <h1>Ratings & Activity Records</h1>
+    <p class="page-sub">Audit user preference ratings across movies, music, and sports teams, detect abnormal rating patterns, and remove erroneous entries.</p>
+  </div>
+
+  {% include "admin_nav.html" %}
+
+  <div class="admin-filter-bar">
+    <form method="get" action="{{ url_for('admin.ratings') }}" class="admin-search-form">
+      <div class="search-input-wrap">
+        <input type="text" name="q" value="{{ q }}" placeholder="Search username or item title..." autocomplete="off">
+        {% if q %}
+          <a href="{{ url_for('admin.ratings', type=item_type, stars=stars) }}" class="clear-search-btn">✕</a>
+        {% endif %}
+      </div>
+
+      <div class="filter-controls">
+        <select name="type" onchange="this.form.submit()">
+          <option value="all" {% if item_type == 'all' %}selected{% endif %}>All Types</option>
+          <option value="movie" {% if item_type == 'movie' %}selected{% endif %}>Movies</option>
+          <option value="song" {% if item_type == 'song' %}selected{% endif %}>Songs</option>
+          <option value="team" {% if item_type == 'team' %}selected{% endif %}>Teams</option>
+        </select>
+
+        <select name="stars" onchange="this.form.submit()">
+          <option value="all" {% if stars == 'all' %}selected{% endif %}>All Stars</option>
+          <option value="5" {% if stars == '5' %}selected{% endif %}>5 Stars</option>
+          <option value="4" {% if stars == '4' %}selected{% endif %}>4 Stars</option>
+          <option value="3" {% if stars == '3' %}selected{% endif %}>3 Stars</option>
+          <option value="2" {% if stars == '2' %}selected{% endif %}>2 Stars</option>
+          <option value="1" {% if stars == '1' %}selected{% endif %}>1 Star</option>
+        </select>
+
+        <button type="submit" class="btn btn-small">Filter</button>
+        {% if q or item_type != 'all' or stars != 'all' %}
+          <a href="{{ url_for('admin.ratings') }}" class="btn-ghost btn-small">Reset</a>
+        {% endif %}
+      </div>
+    </form>
+  </div>
+
+  {% if ratings %}
+    <div class="table-responsive">
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>User</th>
+            <th>Item</th>
+            <th>Type</th>
+            <th>Rating</th>
+            <th>Date</th>
+            <th style="text-align: right;">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in ratings %}
+            <tr>
+              <td>
+                <div class="user-cell">
+                  <div class="avatar avatar-sm avatar-{{ r['user_id'] % 3 }}">
+                    {% if r['avatar_url'] %}
+                      <img src="{{ r['avatar_url'] }}" alt="{{ r['username'] }}">
+                    {% else %}
+                      {{ r['username'][:1]|upper }}
+                    {% endif %}
+                  </div>
+                  <div>
+                    <a href="{{ url_for('admin.user_detail', user_id=r['user_id']) }}" class="table-username">
+                      {{ r['username'] }}
+                    </a>
+                    {% if not r['user_active'] %}
+                      <span class="status-pill status-suspended" style="font-size: 0.65rem; padding: 0.05rem 0.35rem;">Suspended</span>
+                    {% endif %}
+                  </div>
+                </div>
+              </td>
+              <td>
+                <strong>{{ r['item_title'] }}</strong>
+                {% if r['genre_tags'] %}
+                  <div class="text-muted-sm">{{ r['genre_tags'] }}</div>
+                {% endif %}
+              </td>
+              <td>
+                <span class="chip chip-{{ r['item_type'] }} chip-xs">{{ r['item_type'] }}</span>
+              </td>
+              <td>
+                <span class="star-gold">★</span> <strong>{{ r['rating'] }}</strong> / 5
+              </td>
+              <td class="text-muted-sm">{{ r['created_at'][:10] if r['created_at'] else '—' }}</td>
+              <td style="text-align: right;">
+                <form method="post" action="{{ url_for('admin.delete_rating', rating_id=r['id']) }}" style="display:inline;"
+                      onsubmit="return confirm('Remove this rating record?');">
+                  <button type="submit" class="btn-action-danger btn-xs" title="Delete rating">Remove</button>
+                </form>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div class="empty-state">
+      <p>No ratings match your filter criteria.</p>
+      <p class="empty-sub"><a href="{{ url_for('admin.ratings') }}" class="link-underline">Clear all filters</a> to view all ratings.</p>
+    </div>
+  {% endif %}
+
+</div>
+{% endblock %}
+

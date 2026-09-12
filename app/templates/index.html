@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+{% block title %}Fan Network — Find your people through what you love{% endblock %}
+{% block content %}
+
+<section class="hero">
+  <div class="hero-inner">
+    <div class="hero-copy">
+      <div class="domain-legend">
+        <span class="chip chip-movies">Movies</span>
+        <span class="chip chip-music">Music</span>
+        <span class="chip chip-sports">Sports</span>
+      </div>
+      <h1 class="hero-title">Find your people<br>through what you<br>actually love.</h1>
+      <p class="hero-sub">
+        Rate the movies, music, and teams you're into. Fan Network matches you
+        with people who share your taste — and settles what the group watches
+        next.
+      </p>
+      <div class="hero-actions">
+        {% if user %}
+          <a href="{{ url_for('items.browse') }}" class="btn">Start rating</a>
+          <a href="{{ url_for('recommend.group') }}" class="link-underline">Get a group pick</a>
+        {% else %}
+          <a href="{{ url_for('auth.register') }}" class="btn">Join free</a>
+          <a href="#how-it-works" class="link-underline">See how it works</a>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="hero-visual" aria-hidden="true">
+      <svg viewBox="0 0 420 360" xmlns="http://www.w3.org/2000/svg" class="taste-diagram">
+        <line x1="20" y1="70" x2="190" y2="170" stroke="var(--accent-movies)" stroke-width="3" stroke-linecap="round"/>
+        <line x1="20" y1="180" x2="190" y2="180" stroke="var(--accent-music)" stroke-width="3" stroke-linecap="round"/>
+        <line x1="20" y1="290" x2="190" y2="190" stroke="var(--accent-sports)" stroke-width="3" stroke-linecap="round"/>
+
+        <circle cx="20" cy="70" r="7" fill="var(--accent-movies)"/>
+        <circle cx="20" cy="180" r="7" fill="var(--accent-music)"/>
+        <circle cx="20" cy="290" r="7" fill="var(--accent-sports)"/>
+
+        <circle cx="205" cy="180" r="34" fill="var(--surface-raised)" stroke="var(--border)" stroke-width="1.5"/>
+        <text x="205" y="185" text-anchor="middle" class="diagram-label">You</text>
+
+        <line x1="239" y1="165" x2="330" y2="95" stroke="var(--border)" stroke-width="2"/>
+        <line x1="239" y1="195" x2="330" y2="265" stroke="var(--border)" stroke-width="2"/>
+
+        <rect x="330" y="65" width="80" height="60" rx="4" fill="var(--surface-raised)" stroke="var(--border)"/>
+        <text x="370" y="90" text-anchor="middle" class="diagram-label-small">Taste</text>
+        <text x="370" y="106" text-anchor="middle" class="diagram-label-small">match</text>
+
+        <rect x="330" y="235" width="80" height="60" rx="4" fill="var(--surface-raised)" stroke="var(--border)"/>
+        <text x="370" y="260" text-anchor="middle" class="diagram-label-small">Group</text>
+        <text x="370" y="276" text-anchor="middle" class="diagram-label-small">pick</text>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<section id="how-it-works" class="section">
+  <div class="container">
+    <h2 class="section-title">How it works</h2>
+    <ol class="steps">
+      <li class="step">
+        <span class="step-number">01</span>
+        <h3>Rate what you're into</h3>
+        <p>A few movies, songs, and teams is enough to start building your taste profile.</p>
+      </li>
+      <li class="step">
+        <span class="step-number">02</span>
+        <h3>Meet your taste-twins</h3>
+        <p>We match you with people whose ratings actually line up with yours — not just who you already know.</p>
+      </li>
+      <li class="step">
+        <span class="step-number">03</span>
+        <h3>Get the group's pick</h3>
+        <p>Planning a movie night or picking a playlist with friends? The group engine finds the option everyone's happy with.</p>
+      </li>
+    </ol>
+  </div>
+</section>
+
+<section class="section section-alt">
+  <div class="container">
+    <h2 class="section-title">One taste graph, three worlds</h2>
+    <div class="domain-grid">
+      <article class="domain-card domain-card-movies">
+        <h3>Movies</h3>
+        <p>From arthouse to blockbusters — rate what you watch and find people who get your taste in film.</p>
+      </article>
+      <article class="domain-card domain-card-music">
+        <h3>Music</h3>
+        <p>Artists, albums, tracks — your listening taste becomes part of the same profile as everything else.</p>
+      </article>
+      <article class="domain-card domain-card-sports">
+        <h3>Sports</h3>
+        <p>Teams and leagues you follow feed into the same match — sports fans and movie buffs, unified.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <div class="spotlight">
+      <div class="spotlight-copy">
+        <h2 class="section-title">Stop arguing about what to watch</h2>
+        <p>
+          Pick your group, and Fan Network ranks options against everyone's
+          taste at once — either the pick that makes the group happiest on
+          average, or the one nobody hates.
+        </p>
+        {% if user %}
+          <a href="{{ url_for('recommend.group') }}" class="link-underline">Try it with your group</a>
+        {% else %}
+          <a href="{{ url_for('auth.register') }}" class="link-underline">Join to try it</a>
+        {% endif %}
+      </div>
+      <div class="spotlight-visual">
+        <div class="poll-row"><span>Asha</span><span class="poll-bar" style="--fill: 90%"></span></div>
+        <div class="poll-row"><span>Rohan</span><span class="poll-bar" style="--fill: 74%"></span></div>
+        <div class="poll-row"><span>Priya</span><span class="poll-bar" style="--fill: 82%"></span></div>
+        <div class="poll-row poll-winner"><span>Group pick</span><span class="poll-bar" style="--fill: 100%"></span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer class="site-footer">
+  <div class="container footer-inner">
+    <span>Fan Network — built for people who take their taste seriously.</span>
+    <div class="footer-links">
+      <a href="{{ url_for('items.browse') }}">Browse</a>
+      <a href="{{ url_for('feed.feed') }}">Feed</a>
+    </div>
+  </div>
+</footer>
+
+{% endblock %}

@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% block title %}Post Moderation — Fan Network Admin{% endblock %}
+{% block content %}
+<div class="container page">
+
+  <div class="page-head">
+    <h1>Post Moderation</h1>
+    <p class="page-sub">Monitor user discussions across the platform, detect negative or abusive commentary using sentiment analysis, and moderate content.</p>
+  </div>
+
+  {% include "admin_nav.html" %}
+
+  <div class="admin-filter-bar">
+    <form method="get" action="{{ url_for('admin.posts') }}" class="admin-search-form">
+      <div class="search-input-wrap">
+        <input type="text" name="q" value="{{ q }}" placeholder="Search post text, username, item title..." autocomplete="off">
+        {% if q %}
+          <a href="{{ url_for('admin.posts', sentiment=sentiment) }}" class="clear-search-btn">✕</a>
+        {% endif %}
+      </div>
+
+      <div class="filter-controls">
+        <select name="sentiment" onchange="this.form.submit()">
+          <option value="all" {% if sentiment == 'all' %}selected{% endif %}>All Sentiments</option>
+          <option value="positive" {% if sentiment == 'positive' %}selected{% endif %}>Positive Only</option>
+          <option value="neutral" {% if sentiment == 'neutral' %}selected{% endif %}>Neutral Only</option>
+          <option value="negative" {% if sentiment == 'negative' %}selected{% endif %}>Negative / Flagged</option>
+        </select>
+
+        <button type="submit" class="btn btn-small">Filter</button>
+        {% if q or sentiment != 'all' %}
+          <a href="{{ url_for('admin.posts') }}" class="btn-ghost btn-small">Reset</a>
+        {% endif %}
+      </div>
+    </form>
+  </div>
+
+  {% if posts %}
+    <div class="admin-posts-list">
+      {% for p in posts %}
+        <div class="admin-post-card sentiment-card-{{ p['sentiment_label'] }}">
+          <div class="admin-post-header">
+            <div class="admin-post-author">
+              <div class="avatar avatar-sm avatar-{{ p['user_id'] % 3 }}">
+                {% if p['avatar_url'] %}
+                  <img src="{{ p['avatar_url'] }}" alt="{{ p['username'] }}">
+                {% else %}
+                  {{ p['username'][:1]|upper }}
+                {% endif %}
+              </div>
+              <div>
+                <a href="{{ url_for('admin.user_detail', user_id=p['user_id']) }}" class="table-username">
+                  {{ p['username'] }}
+                </a>
+                {% if not p['user_active'] %}
+                  <span class="status-pill status-suspended" style="font-size: 0.65rem; padding: 0.05rem 0.35rem;">Suspended</span>
+                {% endif %}
+              </div>
+            </div>
+
+            <div class="admin-post-indicators">
+              {% if p['is_pinned'] %}
+                <span class="badge-pinned-tag">📌 Pinned</span>
+              {% endif %}
+              {% if p['item_title'] %}
+                <span class="chip chip-{{ p['item_type'] }} chip-xs">{{ p['item_type'] }}: {{ p['item_title'] }}</span>
+              {% endif %}
+              <span class="sentiment-badge sentiment-{{ p['sentiment_label'] }}">
+                {{ p['sentiment_label'] }} ({{ "%.2f"|format(p['sentiment_score']) }})
+              </span>
+              <span class="text-muted-sm">{{ p['created_at'] }}</span>
+            </div>
+          </div>
+
+          <div class="admin-post-body">
+            <p>{{ p['content'] }}</p>
+          </div>
+
+          <div class="admin-post-footer">
+            <span class="text-muted-sm">Post ID: #{{ p['id'] }}</span>
+            <div class="admin-post-actions">
+              <form method="post" action="{{ url_for('admin.toggle_pin_post', post_id=p['id']) }}" style="display:inline;">
+                {% if p['is_pinned'] %}
+                  <button type="submit" class="btn-action-warn btn-xs">Unpin</button>
+                {% else %}
+                  <button type="submit" class="btn-ghost btn-xs">📌 Pin</button>
+                {% endif %}
+              </form>
+              <a href="{{ url_for('admin.user_detail', user_id=p['user_id']) }}" class="btn-ghost btn-xs">View Author</a>
+              <form method="post" action="{{ url_for('admin.delete_post', post_id=p['id']) }}" onsubmit="return confirm('Delete this post permanently?');">
+                <button type="submit" class="btn-action-danger btn-xs">Delete Post</button>
+              </form>
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="empty-state">
+      <p>No posts match your search or sentiment criteria.</p>
+      <p class="empty-sub"><a href="{{ url_for('admin.posts') }}" class="link-underline">Clear all filters</a> to view all posts.</p>
+    </div>
+  {% endif %}
+
+</div>
+{% endblock %}
+

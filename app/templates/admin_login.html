@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Admin login{% endblock %}
+{% block content %}
+<div class="container page">
+  <div class="admin-login">
+    <span class="chip chip-sports">Admin</span>
+    <h1>Admin login</h1>
+    <p class="page-sub">Restricted access — API keys and data-loading tools live behind this login.</p>
+    <form method="post" class="form">
+      <label>Username <input name="username" required autofocus></label>
+      <label>Password <input type="password" name="password" required></label>
+      <button type="submit">Log in as admin</button>
+    </form>
+    <p class="field-hint admin-back-link"><a class="link-underline" href="{{ url_for('auth.login') }}">Not an admin? Regular login →</a></p>
+  </div>
+</div>
+{% endblock %}
