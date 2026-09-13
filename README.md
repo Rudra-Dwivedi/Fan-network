@@ -48,36 +48,20 @@ cd fan_network
 pip install -r requirements.txt
 ```
 
-### 2. Initialize Database & Seed Demo Data
-
-```bash
-python seed_demo_data.py
-```
-*This creates a local `fan_network.db` populated with high-definition catalog items, 4 demo users with ratings, and 1 demo admin account.*
-
-### 3. Run the Application
+### 2. Run the Application
 
 ```bash
 python run.py
 ```
-Open **http://127.0.0.1:5000** in your browser.
+*The SQLite database schema initializes automatically on first startup.*
+Open **http://127.0.0.1:5000** in your browser. You can create accounts anytime via **Join free** (`/auth/register`).
 
----
+### 3. Create an Administrator Account
 
-## Default Accounts
-
-| Account Type | Username | Password | Login URL |
-| :--- | :--- | :--- | :--- |
-| **Regular User** | `asha` | `password123` | `/auth/login` |
-| **Regular User** | `rohan` | `password123` | `/auth/login` |
-| **Regular User** | `priya` | `password123` | `/auth/login` |
-| **Regular User** | `vikram` | `password123` | `/auth/login` |
-| **Administrator** | `admin` | `admin123` | `/admin/login` |
-
-To create custom administrator accounts via the CLI, run:
 ```bash
 python create_admin.py
 ```
+*Follow the interactive prompts to create an administrator account for access to the Admin Portal (`/admin/login`).*
 
 ---
 
@@ -112,7 +96,6 @@ fan_network/
 │       └── avatars/         # Uploaded user profile photos
 ├── config.py                # App configuration
 ├── create_admin.py          # CLI admin creation tool
-├── seed_demo_data.py        # Database seeder with HD sample data
 ├── requirements.txt         # Python package dependencies
 ├── run.py                   # Development server runner
 └── README.md                # Documentation
