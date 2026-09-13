@@ -1,4 +1,4 @@
--- Fan Network database schema
+-- मन्यांकः (Manyankah) database schema
 
 CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,

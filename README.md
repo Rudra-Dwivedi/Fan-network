@@ -1,4 +1,4 @@
-# Fan Network
+# मन्यांकः (Manyankah)
 
 A social platform that matches people by taste across movies, music, and sports, and helps groups decide what to watch or listen to together using a hybrid recommendation engine.
 
@@ -67,7 +67,7 @@ python create_admin.py
 
 ## Deploy to Railway
 
-Deploying Fan Network live to [Railway](https://railway.app) takes less than 2 minutes:
+Deploying मन्यांकः (Manyankah) live to [Railway](https://railway.app) takes less than 2 minutes:
 
 1. **Push your code to GitHub**:
    Ensure your latest changes are pushed to your repository: `git push origin main`.

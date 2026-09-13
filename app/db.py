@@ -44,7 +44,7 @@ def init_db(app):
     with app.app_context():
         db = sqlite3.connect(app.config["DATABASE_PATH"])
         schema_path = os.path.join(os.path.dirname(__file__), "schema.sql")
-        with open(schema_path, "r") as f:
+        with open(schema_path, "r", encoding="utf-8") as f:
             db.executescript(f.read())
 
         cursor = db.cursor()
