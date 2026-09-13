@@ -61,7 +61,33 @@ Open **http://127.0.0.1:5000** in your browser. You can create accounts anytime 
 ```bash
 python create_admin.py
 ```
-*Follow the interactive prompts to create an administrator account for access to the Admin Portal (`/admin/login`).*
+*Follow the interactive prompts (or pass `--username` and `--password`) to create an administrator account for access to the Admin Portal (`/admin/login`).*
+
+---
+
+## Deploy to Railway
+
+Deploying Fan Network live to [Railway](https://railway.app) takes less than 2 minutes:
+
+1. **Push your code to GitHub**:
+   Ensure your latest changes are pushed to your repository: `git push origin main`.
+
+2. **Create a New Project on Railway**:
+   - Go to [railway.app](https://railway.app) and log in with your GitHub account.
+   - Click **+ New Project** $\rightarrow$ **Deploy from GitHub repo**.
+   - Choose your repository: `Rudra-Dwivedi/Fan-network`.
+   - Railway will automatically detect Python, install dependencies via `requirements.txt`, and launch the production Gunicorn server via `Procfile` and `railway.json`.
+
+3. **Configure Environment Variables** *(Recommended)*:
+   In your Railway project dashboard, click on your service $\rightarrow$ **Variables** tab:
+   - `SECRET_KEY`: Any secret random string for secure session encryption.
+   - `ADMIN_USERNAME`: Your chosen admin username (e.g. `admin`).
+   - `ADMIN_PASSWORD`: Your chosen admin password (e.g. `admin123`).
+   *On first launch, Fan Network will automatically provision your admin account and seed starter catalog items with HD artwork!*
+
+4. **Generate Public URL**:
+   - In your Railway service dashboard $\rightarrow$ **Settings** $\rightarrow$ **Networking**, click **Generate Domain**.
+   - Your live website URL (e.g. `https://fan-network-production.up.railway.app`) is ready to share!
 
 ---
 
@@ -96,8 +122,11 @@ fan_network/
 │       └── avatars/         # Uploaded user profile photos
 ├── config.py                # App configuration
 ├── create_admin.py          # CLI admin creation tool
-├── requirements.txt         # Python package dependencies
-├── run.py                   # Development server runner
+├── Procfile                 # Production WSGI process definition for Railway
+├── railway.json             # Railway Nixpacks deployment configuration
+├── runtime.txt              # Python runtime version
+├── requirements.txt         # Python package dependencies (including Gunicorn)
+├── run.py                   # Server runner with dynamic port binding
 └── README.md                # Documentation
 ```
 

@@ -1,14 +1,17 @@
 """
 Creates (or promotes an existing user to) an admin account.
 
-Admins aren't created through the public registration form on purpose —
-that's a deliberate security choice: only someone with server/database
-access can provision an admin. Run this once to set one up:
+Supports interactive input, CLI flags (--username, --password, --email),
+or environment variables (ADMIN_USERNAME, ADMIN_PASSWORD, ADMIN_EMAIL).
 
+Usage:
     python create_admin.py
+    python create_admin.py --username admin --password secret --email admin@example.com
 """
 
+import argparse
 import getpass
+import os
 import sqlite3
 
 from werkzeug.security import generate_password_hash
@@ -18,11 +21,21 @@ from app.db import get_db
 
 
 def run():
+    parser = argparse.ArgumentParser(description="Create or promote an admin account.")
+    parser.add_argument("--username", help="Admin username", default=os.environ.get("ADMIN_USERNAME"))
+    parser.add_argument("--email", help="Admin email", default=os.environ.get("ADMIN_EMAIL"))
+    parser.add_argument("--password", help="Admin password", default=os.environ.get("ADMIN_PASSWORD"))
+    args = parser.parse_args()
+
     app = create_app()
     with app.app_context():
         db = get_db()
 
-        username = input("Admin username: ").strip()
+        username = (args.username or input("Admin username: ")).strip()
+        if not username:
+            print("Username cannot be empty.")
+            return
+
         existing = db.execute(
             "SELECT id, role FROM users WHERE username = ?", (username,)
         ).fetchone()
@@ -38,8 +51,14 @@ def run():
             print(f"Promoted existing user '{username}' to admin.")
             return
 
-        email = input("Admin email: ").strip()
-        password = getpass.getpass("Admin password: ")
+        email = (args.email or input("Admin email: ")).strip() if not args.email else args.email.strip()
+        if not email:
+            email = f"{username}@fannetwork.local"
+
+        password = args.password or getpass.getpass("Admin password: ")
+        if not password:
+            print("Password cannot be empty.")
+            return
 
         try:
             db.execute(
