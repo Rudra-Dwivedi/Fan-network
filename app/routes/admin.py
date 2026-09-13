@@ -40,6 +40,10 @@ def login():
             error = "This account isn't an admin account."
 
         if error is None:
+            db.execute(
+                "UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = ?", (user["id"],)
+            )
+            db.commit()
             session.clear()
             session["user_id"] = user["id"]
             return redirect(url_for("admin.dashboard"))

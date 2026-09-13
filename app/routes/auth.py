@@ -131,6 +131,10 @@ def login():
             error = "Admin accounts log in from the admin login page, not here."
 
         if error is None:
+            db.execute(
+                "UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = ?", (user["id"],)
+            )
+            db.commit()
             session.clear()
             session["user_id"] = user["id"]
             return redirect(url_for("index"))

@@ -12,10 +12,10 @@ bp = Blueprint("recommend", __name__, url_prefix="/recommend")
 @bp.route("/people")
 @login_required
 def people():
-    """Show users with the most similar taste, so you can follow them."""
-    matches = similar_users(g.user["id"], top_n=10)
-
+    """Show users with the most similar taste, and all community members so users can discover and follow each other."""
     db = get_db()
+    q = request.args.get("q", "").strip()
+
     following_ids = {
         row["followed_id"]
         for row in db.execute(
@@ -23,10 +23,14 @@ def people():
         ).fetchall()
     }
 
+    # 1. Collaborative filtering: top taste matches
+    matches = similar_users(g.user["id"], top_n=10)
     results = []
+    matched_uids = set()
     for uid, score in matches:
+        matched_uids.add(uid)
         user = db.execute(
-            "SELECT id, username, avatar_url FROM users WHERE id = ?", (uid,)
+            "SELECT id, username, avatar_url, role FROM users WHERE id = ? AND is_active = 1", (uid,)
         ).fetchone()
         if user:
             results.append(
@@ -37,7 +41,42 @@ def people():
                 }
             )
 
-    return render_template("similar_people.html", matches=results)
+    # 2. All active community members so anyone can be discovered and followed
+    if q:
+        members_query = """
+            SELECT u.id, u.username, u.avatar_url, u.role, u.last_login, u.created_at,
+                   (SELECT COUNT(*) FROM user_preferences WHERE user_id = u.id) AS rating_count,
+                   (SELECT COUNT(*) FROM follows WHERE followed_id = u.id) AS follower_count
+            FROM users u
+            WHERE u.id != ? AND u.is_active = 1 AND u.username LIKE ?
+            ORDER BY rating_count DESC, u.created_at DESC
+        """
+        all_members_rows = db.execute(members_query, (g.user["id"], f"%{q}%")).fetchall()
+    else:
+        members_query = """
+            SELECT u.id, u.username, u.avatar_url, u.role, u.last_login, u.created_at,
+                   (SELECT COUNT(*) FROM user_preferences WHERE user_id = u.id) AS rating_count,
+                   (SELECT COUNT(*) FROM follows WHERE followed_id = u.id) AS follower_count
+            FROM users u
+            WHERE u.id != ? AND u.is_active = 1
+            ORDER BY rating_count DESC, u.created_at DESC
+        """
+        all_members_rows = db.execute(members_query, (g.user["id"],)).fetchall()
+
+    members = []
+    for m in all_members_rows:
+        members.append({
+            "user": m,
+            "following": m["id"] in following_ids,
+            "is_matched": m["id"] in matched_uids,
+        })
+
+    return render_template(
+        "similar_people.html",
+        matches=results,
+        members=members,
+        search_query=q,
+    )
 
 
 @bp.route("/follow/<int:user_id>", methods=["POST"])

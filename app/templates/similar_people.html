@@ -1,49 +1,146 @@
 {% extends "base.html" %}
-{% block title %}Find people{% endblock %}
+{% block title %}Find People - Fan Network{% endblock %}
 {% block content %}
 <div class="container page">
 
   <div class="page-head">
-    <h1>People with taste like yours</h1>
-    <p class="page-sub">Ranked by how closely their ratings line up with yours — the biggest match, not just the same people you already follow elsewhere.</p>
+    <h1>Find People</h1>
+    <p class="page-sub">Discover community members, connect with friends, and see whose taste in movies, music, and sports aligns with yours.</p>
   </div>
 
-  {% if matches|length == 0 %}
-    <div class="empty-state">
-      <p>Not enough data yet.</p>
-      <p class="empty-sub">Rate a few movies, songs, and teams first — and make sure other users have rated things too.</p>
+  <div class="people-search-bar">
+    <form method="get" action="{{ url_for('recommend.people') }}" class="search-form-inline">
+      <input type="text" name="q" value="{{ search_query }}" placeholder="Search members by username..." autocomplete="off">
+      <button type="submit" class="btn btn-small">Search</button>
+      {% if search_query %}
+        <a href="{{ url_for('recommend.people') }}" class="btn-ghost btn-small">Clear</a>
+      {% endif %}
+    </form>
+  </div>
+
+  {% if matches|length > 0 %}
+    <section class="people-section">
+      <div class="section-title-wrap">
+        <h2 class="section-heading"><span class="section-icon">🌟</span> Top Taste Matches</h2>
+        <span class="section-meta">{{ matches|length }} calculated</span>
+      </div>
+      <p class="section-caption">Users who have rated the same items and have high algorithmic taste similarity.</p>
+      
+      <ul class="match-list">
+        {% for m in matches %}
+          <li class="match-card">
+            <a href="{{ url_for('recommend.profile', username=m.user['username']) }}" class="avatar-link">
+              <div class="avatar avatar-{{ m.user['id'] % 3 }}">
+                {% if m.user['avatar_url'] %}
+                  <img src="{{ m.user['avatar_url'] }}" alt="{{ m.user['username'] }}">
+                {% else %}
+                  {{ m.user['username'][0]|upper }}
+                {% endif %}
+              </div>
+            </a>
+            <div class="match-info">
+              <a href="{{ url_for('recommend.profile', username=m.user['username']) }}" class="member-name-link">
+                <strong>{{ m.user['username'] }}</strong>
+              </a>
+              <div class="meter">
+                <span class="meter-fill" style="--fill: {{ (m.score * 100)|round|int }}%"></span>
+              </div>
+              <span class="meter-label">{{ (m.score * 100)|round|int }}% taste match</span>
+            </div>
+            <div class="match-action">
+              {% if m.following %}
+                <form method="post" action="{{ url_for('recommend.unfollow', user_id=m.user['id']) }}">
+                  <button type="submit" class="btn-ghost" title="Click to unfollow">Following</button>
+                </form>
+              {% else %}
+                <form method="post" action="{{ url_for('recommend.follow', user_id=m.user['id']) }}">
+                  <button type="submit" class="btn btn-small">Follow</button>
+                </form>
+              {% endif %}
+            </div>
+          </li>
+        {% endfor %}
+      </ul>
+    </section>
+  {% elif not search_query %}
+    <div class="match-tip-box">
+      <div class="tip-icon">💡</div>
+      <div class="tip-content">
+        <strong>Taste matches build as you rate items</strong>
+        <p>Once you and other members rate overlapping movies, music, or sports teams, your personalized similarity ranking will appear here. In the meantime, browse and follow members below!</p>
+      </div>
     </div>
   {% endif %}
 
-  <ul class="match-list">
-    {% for m in matches %}
-      <li class="match-card">
-        <div class="avatar avatar-{{ m.user['id'] % 3 }}">
-          {% if m.user['avatar_url'] %}
-            <img src="{{ m.user['avatar_url'] }}" alt="{{ m.user['username'] }}">
-          {% else %}
-            {{ m.user['username'][0]|upper }}
-          {% endif %}
-        </div>
-        <div class="match-info">
-          <strong>{{ m.user['username'] }}</strong>
-          <div class="meter">
-            <span class="meter-fill" style="--fill: {{ (m.score * 100)|round|int }}%"></span>
-          </div>
-          <span class="meter-label">{{ (m.score * 100)|round|int }}% taste match</span>
-        </div>
-        {% if m.following %}
-          <form method="post" action="{{ url_for('recommend.unfollow', user_id=m.user['id']) }}">
-            <button type="submit" class="btn-ghost">Following</button>
-          </form>
-        {% else %}
-          <form method="post" action="{{ url_for('recommend.follow', user_id=m.user['id']) }}">
-            <button type="submit" class="btn btn-small">Follow</button>
-          </form>
+  <section class="people-section">
+    <div class="section-title-wrap">
+      <h2 class="section-heading"><span class="section-icon">👥</span> Community Members</h2>
+      <span class="section-meta">{{ members|length }} {% if members|length == 1 %}member{% else %}members{% endif %}</span>
+    </div>
+    <p class="section-caption">Connect with active members across the network and check out what they are watching, listening to, and supporting.</p>
+
+    {% if members|length == 0 %}
+      <div class="empty-state">
+        <p>No members found{% if search_query %} matching "{{ search_query }}"{% endif %}.</p>
+        {% if search_query %}
+          <p class="empty-sub"><a href="{{ url_for('recommend.people') }}" class="link-underline">View all members</a></p>
         {% endif %}
-      </li>
-    {% endfor %}
-  </ul>
+      </div>
+    {% else %}
+      <div class="members-grid">
+        {% for m in members %}
+          <div class="member-card">
+            <a href="{{ url_for('recommend.profile', username=m.user['username']) }}" class="avatar-link">
+              <div class="avatar avatar-{{ m.user['id'] % 3 }}">
+                {% if m.user['avatar_url'] %}
+                  <img src="{{ m.user['avatar_url'] }}" alt="{{ m.user['username'] }}">
+                {% else %}
+                  {{ m.user['username'][0]|upper }}
+                {% endif %}
+              </div>
+            </a>
+            
+            <div class="member-card-details">
+              <div class="member-card-header">
+                <a href="{{ url_for('recommend.profile', username=m.user['username']) }}" class="member-name-link">
+                  <span class="member-username">{{ m.user['username'] }}</span>
+                </a>
+                {% if m.user['role'] == 'admin' %}
+                  <span class="admin-badge">Admin</span>
+                {% endif %}
+              </div>
+
+              <div class="member-stats-row">
+                <span class="member-stat" title="{{ m.user['rating_count'] }} items rated">
+                  <span class="star-gold">★</span> {{ m.user['rating_count'] }} ratings
+                </span>
+                <span class="stat-bullet">•</span>
+                <span class="member-stat" title="{{ m.user['follower_count'] }} followers">
+                  {{ m.user['follower_count'] }} followers
+                </span>
+                {% if m.user['last_login'] %}
+                  <span class="stat-bullet">•</span>
+                  <span class="member-online-pill" title="Recently active">🟢 Active</span>
+                {% endif %}
+              </div>
+            </div>
+
+            <div class="member-card-action">
+              {% if m.following %}
+                <form method="post" action="{{ url_for('recommend.unfollow', user_id=m.user['id']) }}">
+                  <button type="submit" class="btn-ghost btn-following" title="Click to unfollow">Following</button>
+                </form>
+              {% else %}
+                <form method="post" action="{{ url_for('recommend.follow', user_id=m.user['id']) }}">
+                  <button type="submit" class="btn btn-small">Follow</button>
+                </form>
+              {% endif %}
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  </section>
 
 </div>
 {% endblock %}

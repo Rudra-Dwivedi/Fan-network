@@ -40,11 +40,16 @@
           <h3>{{ item['title'] }}</h3>
           {% if g.user %}
             <form method="post" action="{{ url_for('items.rate', item_id=item['id']) }}" class="rate-form">
-              <div class="star-rating">
-                {% for r in [5, 4, 3, 2, 1] %}
-                  <input type="radio" id="r{{ r }}-{{ item['id'] }}" name="rating" value="{{ r }}" {{ 'checked' if current == r }}>
-                  <label for="r{{ r }}-{{ item['id'] }}" title="{{ r }} stars">★</label>
-                {% endfor %}
+              <div class="star-rating-wrap">
+                <div class="star-rating" title="Select 1-5 stars">
+                  {% for r in [5, 4, 3, 2, 1] %}
+                    <input type="radio" id="r{{ r }}-{{ item['id'] }}" name="rating" value="{{ r }}" {{ 'checked' if current == r }}>
+                    <label for="r{{ r }}-{{ item['id'] }}" title="{{ r }} star{% if r > 1 %}s{% endif %}">★</label>
+                  {% endfor %}
+                </div>
+                {% if current %}
+                  <span class="user-rated-pill" title="Your current rating: {{ current }} / 5">★ {{ current }}/5</span>
+                {% endif %}
               </div>
               <button type="submit" class="btn-ghost">{{ 'Update' if current else 'Rate' }}</button>
             </form>

@@ -56,6 +56,8 @@ def init_db(app):
             cursor.execute("ALTER TABLE users ADD COLUMN is_active INTEGER NOT NULL DEFAULT 1")
         if "avatar_url" not in user_columns:
             cursor.execute("ALTER TABLE users ADD COLUMN avatar_url TEXT")
+        if "last_login" not in user_columns:
+            cursor.execute("ALTER TABLE users ADD COLUMN last_login TIMESTAMP")
 
         # Migration: ensure posts table has is_pinned column
         cursor.execute("PRAGMA table_info(posts)")
