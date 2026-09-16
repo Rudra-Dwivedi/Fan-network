@@ -13,7 +13,7 @@ def load_logged_in_user():
     else:
         db = get_db()
         user = db.execute(
-            "SELECT id, username, email, role, is_active, avatar_url FROM users WHERE id = ?", (user_id,)
+            "SELECT id, username, email, role, is_active, avatar_url, bio FROM users WHERE id = ?", (user_id,)
         ).fetchone()
         if user is None or not user["is_active"]:
             session.clear()

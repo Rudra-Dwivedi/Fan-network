@@ -44,7 +44,7 @@ def people():
     # 2. All active community members so anyone can be discovered and followed
     if q:
         members_query = """
-            SELECT u.id, u.username, u.avatar_url, u.role, u.last_login, u.created_at,
+            SELECT u.id, u.username, u.avatar_url, u.bio, u.role, u.last_login, u.created_at,
                    (SELECT COUNT(*) FROM user_preferences WHERE user_id = u.id) AS rating_count,
                    (SELECT COUNT(*) FROM follows WHERE followed_id = u.id) AS follower_count
             FROM users u
@@ -54,7 +54,7 @@ def people():
         all_members_rows = db.execute(members_query, (g.user["id"], f"%{q}%")).fetchall()
     else:
         members_query = """
-            SELECT u.id, u.username, u.avatar_url, u.role, u.last_login, u.created_at,
+            SELECT u.id, u.username, u.avatar_url, u.bio, u.role, u.last_login, u.created_at,
                    (SELECT COUNT(*) FROM user_preferences WHERE user_id = u.id) AS rating_count,
                    (SELECT COUNT(*) FROM follows WHERE followed_id = u.id) AS follower_count
             FROM users u
@@ -108,7 +108,7 @@ def profile(username):
     """Public user profile showing someone's taste, ratings, and feed activity."""
     db = get_db()
     user = db.execute(
-        "SELECT id, username, role, is_active, created_at, avatar_url FROM users WHERE username = ?",
+        "SELECT id, username, role, is_active, created_at, avatar_url, bio FROM users WHERE username = ?",
         (username,),
     ).fetchone()
 

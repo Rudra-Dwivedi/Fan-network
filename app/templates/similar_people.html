@@ -123,6 +123,10 @@
                   <span class="member-online-pill" title="Recently active">🟢 Active</span>
                 {% endif %}
               </div>
+
+              {% if m.user['bio'] %}
+                <p class="member-card-bio">{{ m.user['bio'] }}</p>
+              {% endif %}
             </div>
 
             <div class="member-card-action">

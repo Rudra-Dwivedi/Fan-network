@@ -12,6 +12,7 @@ from flask import (
     flash,
     g,
     current_app,
+    jsonify,
 )
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
@@ -31,22 +32,42 @@ def allowed_file(filename):
 @bp.route("/profile", methods=["GET", "POST"])
 @login_required
 def profile():
-    """Manage personal profile settings and profile photo."""
+    """Manage personal profile settings, bio, and profile photo (supports form & AJAX)."""
     db = get_db()
     if request.method == "POST":
+        is_ajax = request.headers.get("X-Requested-With") == "XMLHttpRequest" or request.form.get("format") == "json"
         action = request.form.get("action")
+        bio = request.form.get("bio")
+
+        # 0. Update bio if provided in form
+        clean_bio = None
+        if bio is not None:
+            clean_bio = bio.strip()[:300]
+            db.execute("UPDATE users SET bio = ? WHERE id = ?", (clean_bio, g.user["id"]))
+            db.commit()
 
         # 1. Remove photo action
         if action == "remove":
             db.execute("UPDATE users SET avatar_url = NULL WHERE id = ?", (g.user["id"],))
             db.commit()
+            if is_ajax:
+                return jsonify({
+                    "success": True,
+                    "message": "Profile photo removed. Your avatar now shows your initial.",
+                    "avatar_url": None,
+                    "bio": clean_bio if clean_bio is not None else g.user["bio"]
+                })
             flash("Profile photo removed. Your avatar now shows your initial.")
             return redirect(url_for("auth.profile"))
+
+        updated_avatar_url = g.user["avatar_url"]
 
         # 2. File upload action
         file = request.files.get("avatar_file")
         if file and file.filename != "":
             if not allowed_file(file.filename):
+                if is_ajax:
+                    return jsonify({"error": "Invalid image format. Allowed: PNG, JPG, JPEG, GIF, WEBP."}), 400
                 flash("Invalid image format. Allowed formats: PNG, JPG, JPEG, GIF, WEBP.")
                 return redirect(url_for("auth.profile"))
 
@@ -60,23 +81,31 @@ def profile():
             new_url = url_for("static", filename=f"avatars/{safe_name}")
             db.execute("UPDATE users SET avatar_url = ? WHERE id = ?", (new_url, g.user["id"]))
             db.commit()
-            flash("Profile photo updated successfully!")
-            return redirect(url_for("auth.profile"))
+            updated_avatar_url = new_url
 
         # 3. Image URL action
         avatar_url = request.form.get("avatar_url", "").strip()
         if avatar_url:
             if not (avatar_url.startswith("http://") or avatar_url.startswith("https://") or avatar_url.startswith("/static/")):
+                if is_ajax:
+                    return jsonify({"error": "Please enter a valid image URL starting with http:// or https://"}), 400
                 flash("Please enter a valid image URL starting with http:// or https://")
                 return redirect(url_for("auth.profile"))
 
             db.execute("UPDATE users SET avatar_url = ? WHERE id = ?", (avatar_url, g.user["id"]))
             db.commit()
-            flash("Profile photo updated successfully!")
-            return redirect(url_for("auth.profile"))
+            updated_avatar_url = avatar_url
 
-        flash("Please choose an image file to upload or enter an image web URL.")
-        return redirect(url_for("auth.profile"))
+        if is_ajax:
+            return jsonify({
+                "success": True,
+                "message": "Profile updated successfully!",
+                "avatar_url": updated_avatar_url,
+                "bio": clean_bio if clean_bio is not None else g.user["bio"]
+            })
+
+        flash("Profile updated successfully!")
+        return redirect(request.referrer or url_for("recommend.profile", username=g.user["username"]))
 
     return render_template("profile_edit.html")
 

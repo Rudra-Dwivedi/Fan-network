@@ -8,7 +8,7 @@
     <header class="agent-cockpit-header">
       <div class="agent-brand-col">
         <div class="agent-glow-avatar">
-          <span class="avatar-icon">🤖</span>
+          <img src="{{ url_for('static', filename='img/chitrankakah.jpg') }}" alt="चित्राङ्ककः" class="agent-avatar-photo">
           <span class="avatar-status-dot" title="Live Agent"></span>
         </div>
         <div class="agent-header-meta">
@@ -50,7 +50,9 @@
           </div>
         </div>
         <div class="chat-message-row agent-row">
-          <div class="agent-msg-avatar">🤖</div>
+          <div class="agent-msg-avatar">
+            <img src="{{ url_for('static', filename='img/chitrankakah.jpg') }}" alt="चित्राङ्ककः" class="agent-stream-photo">
+          </div>
           <div class="chat-bubble agent-bubble">
             {% if initial_response.type == 'movie_detail' %}
               {% set m = initial_response.movie %}
@@ -167,7 +169,9 @@
         <div class="agent-welcome-cockpit" id="agent-welcome-view">
           <div class="welcome-intro-card">
             <div class="welcome-top-row">
-              <div class="welcome-big-badge">🤖</div>
+              <div class="welcome-big-badge">
+                <img src="{{ url_for('static', filename='img/chitrankakah.jpg') }}" alt="चित्राङ्ककः" class="welcome-avatar-photo">
+              </div>
               <div>
                 <h2>नमस्ते! I am चित्राङ्ककः (Chitrankakah)</h2>
                 <p>Your dedicated cinema and ratings intelligence agent on <strong>मान्यांकः</strong>. I analyze real viewer ratings, community reactions, director trivia, and curate personalized movie recommendations.</p>
@@ -262,7 +266,9 @@
           <div class="agent-welcome-cockpit" id="agent-welcome-view">
             <div class="welcome-intro-card">
               <div class="welcome-top-row">
-                <div class="welcome-big-badge">🤖</div>
+                <div class="welcome-big-badge">
+                  <img src="/static/img/chitrankakah.jpg" alt="चित्राङ्ककः" class="welcome-avatar-photo">
+                </div>
                 <div>
                   <h2>नमस्ते! I am चित्राङ्ककः (Chitrankakah)</h2>
                   <p>Your dedicated cinema and ratings intelligence agent on <strong>मान्यांकः</strong>. I analyze real viewer ratings, community reactions, director trivia, and curate personalized movie recommendations.</p>
@@ -327,7 +333,9 @@
       row.className = 'chat-message-row agent-row agent-loading-row';
       row.id = 'agent-loading-indicator';
       row.innerHTML = `
-        <div class="agent-msg-avatar">🤖</div>
+        <div class="agent-msg-avatar">
+          <img src="/static/img/chitrankakah.jpg" alt="चित्राङ्ककः" class="agent-stream-photo">
+        </div>
         <div class="chat-bubble agent-bubble loading-bubble">
           <div class="typing-wave">
             <span></span><span></span><span></span>
@@ -465,7 +473,9 @@
       const row = document.createElement('div');
       row.className = 'chat-message-row agent-row';
       row.innerHTML = `
-        <div class="agent-msg-avatar">🤖</div>
+        <div class="agent-msg-avatar">
+          <img src="/static/img/chitrankakah.jpg" alt="चित्राङ्ककः" class="agent-stream-photo">
+        </div>
         <div class="chat-bubble agent-bubble">
           ${bodyHtml}
           ${followupHtml}

@@ -61,8 +61,18 @@
         <input type="url" name="avatar_url" id="avatarUrlInput" placeholder="https://example.com/your-photo.jpg" value="{{ g.user['avatar_url'] or '' }}" style="width: 100%;">
       </div>
 
+      <!-- Bio Section -->
+      <div class="edit-option-block">
+        <h4 style="margin: 0 0 0.4rem; font-size: 0.95rem; color: var(--text-primary);">Bio / About You</h4>
+        <p class="text-muted-sm" style="margin: 0 0 0.6rem;">Share a brief summary of your taste in cinema, favorite tracks, or teams you support (up to 300 characters).</p>
+        <textarea name="bio" id="pageBioInput" rows="3" maxlength="300" placeholder="Tell fellow fans about your favorite films, music, or teams..." style="width: 100%; border: 1px solid var(--border); background: var(--surface); color: var(--text-primary); border-radius: var(--radius); padding: 0.6rem 0.8rem; font-family: var(--font-body); font-size: 0.9rem; box-sizing: border-box;">{{ g.user['bio'] or '' }}</textarea>
+        <div style="text-align: right; margin-top: 0.3rem;">
+          <span id="pageBioCounter" class="char-counter">0 / 300</span>
+        </div>
+      </div>
+
       <div class="form-submit-row" style="margin-top: 1.8rem; display: flex; gap: 0.8rem; align-items: center;">
-        <button type="submit" class="btn">Save Profile Photo</button>
+        <button type="submit" class="btn">Save Profile & DP</button>
         <a href="{{ url_for('recommend.profile', username=g.user['username']) }}" class="btn-ghost">Cancel</a>
       </div>
     </form>
@@ -98,5 +108,15 @@
       previewBox.appendChild(img);
     }
   });
+
+  const bioInput = document.getElementById('pageBioInput');
+  const bioCounter = document.getElementById('pageBioCounter');
+  if (bioInput && bioCounter) {
+    function updateCount() {
+      bioCounter.textContent = bioInput.value.length + ' / 300';
+    }
+    bioInput.addEventListener('input', updateCount);
+    updateCount();
+  }
 </script>
 {% endblock %}

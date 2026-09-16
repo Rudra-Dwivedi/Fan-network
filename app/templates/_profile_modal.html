@@ -1,0 +1,304 @@
+{% if g.user %}
+<!-- Dynamic Profile Photo & Bio Editor Modal -->
+<div id="profile-edit-modal" class="profile-modal-backdrop" style="display: none;" role="dialog" aria-modal="true" aria-labelledby="profile-modal-heading">
+  <div class="profile-modal-card">
+    <!-- Modal Header -->
+    <div class="profile-modal-header">
+      <div class="modal-title-col">
+        <h3 id="profile-modal-heading" class="profile-modal-title">Edit Profile & DP</h3>
+        <span class="profile-modal-sub">@{{ g.user['username'] }}</span>
+      </div>
+      <button type="button" id="profile-modal-close" class="profile-modal-close-btn" aria-label="Close">✕</button>
+    </div>
+
+    <!-- Modal Body -->
+    <form id="profile-modal-form" enctype="multipart/form-data">
+      <input type="hidden" name="format" value="json">
+      <input type="hidden" name="action" id="modal-action-field" value="">
+
+      <!-- Current Avatar Preview & Status -->
+      <div class="modal-avatar-center">
+        <div class="modal-avatar-preview-wrap">
+          <div id="modalAvatarPreview" class="avatar avatar-xl avatar-{{ g.user['id'] % 3 }}">
+            {% if g.user['avatar_url'] %}
+              <img src="{{ g.user['avatar_url'] }}" alt="{{ g.user['username'] }}" id="modalAvatarImg">
+            {% else %}
+              <span id="modalAvatarInitial">{{ g.user['username'][0]|upper }}</span>
+            {% endif %}
+          </div>
+          <label for="modalFileInput" class="avatar-upload-badge" title="Upload new photo">
+            📷
+          </label>
+        </div>
+        <div class="modal-dp-actions">
+          <label for="modalFileInput" class="btn-ghost btn-xs modal-dp-btn">
+            📁 Choose New Photo
+          </label>
+          <button type="button" id="modal-show-url-btn" class="btn-ghost btn-xs modal-dp-btn">
+            🔗 Link URL
+          </button>
+          {% if g.user['avatar_url'] %}
+            <button type="button" id="modal-remove-dp-btn" class="btn-ghost btn-xs modal-dp-btn text-danger">
+              ✕ Remove DP
+            </button>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Hidden file input for one-click upload -->
+      <input type="file" id="modalFileInput" name="avatar_file" accept=".png,.jpg,.jpeg,.gif,.webp" style="display: none;">
+
+      <!-- Image URL input box (toggled on click) -->
+      <div id="modalUrlSection" class="modal-url-section" style="display: none;">
+        <label for="modalUrlInput" class="modal-field-label">Or paste Image URL:</label>
+        <div class="modal-url-input-row">
+          <input type="url" id="modalUrlInput" name="avatar_url" placeholder="https://example.com/photo.jpg" value="{{ g.user['avatar_url'] or '' }}">
+          <button type="button" id="modalUrlApplyBtn" class="btn-ghost btn-xs">Preview</button>
+        </div>
+      </div>
+
+      <!-- Bio Section -->
+      <div class="modal-bio-section">
+        <div class="bio-label-row">
+          <label for="modalBioInput" class="modal-field-label">Bio / About You</label>
+          <span id="bioCharCounter" class="char-counter">0 / 300</span>
+        </div>
+        <textarea id="modalBioInput" name="bio" rows="3" maxlength="300" placeholder="Tell fellow fans about your taste in films, music, or sports teams...">{{ g.user['bio'] or '' }}</textarea>
+        <span class="field-micro-hint">Your bio appears on your public profile and in community discovery.</span>
+      </div>
+
+      <!-- Error / Success Alert inside Modal -->
+      <div id="modalAlertBox" class="modal-alert-box" style="display: none;"></div>
+
+      <!-- Modal Footer -->
+      <div class="profile-modal-footer">
+        <button type="button" id="profile-modal-cancel" class="btn-ghost">Cancel</button>
+        <button type="submit" id="profileModalSubmitBtn" class="btn">
+          <span class="btn-text">Save Changes</span>
+          <span class="btn-spinner" style="display: none;">⏳</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+(function() {
+  const modal = document.getElementById('profile-edit-modal');
+  const closeBtn = document.getElementById('profile-modal-close');
+  const cancelBtn = document.getElementById('profile-modal-cancel');
+  const form = document.getElementById('profile-modal-form');
+  const fileInput = document.getElementById('modalFileInput');
+  const previewBox = document.getElementById('modalAvatarPreview');
+  const showUrlBtn = document.getElementById('modal-show-url-btn');
+  const urlSection = document.getElementById('modalUrlSection');
+  const urlInput = document.getElementById('modalUrlInput');
+  const urlApplyBtn = document.getElementById('modalUrlApplyBtn');
+  const removeDpBtn = document.getElementById('modal-remove-dp-btn');
+  const actionField = document.getElementById('modal-action-field');
+  const bioInput = document.getElementById('modalBioInput');
+  const bioCounter = document.getElementById('bioCharCounter');
+  const alertBox = document.getElementById('modalAlertBox');
+  const submitBtn = document.getElementById('profileModalSubmitBtn');
+  const btnText = submitBtn ? submitBtn.querySelector('.btn-text') : null;
+  const btnSpinner = submitBtn ? submitBtn.querySelector('.btn-spinner') : null;
+
+  const defaultInitial = {{ g.user['username'][0]|upper|tojson }};
+  const currentAvatarUrl = {{ (g.user['avatar_url'] or '')|tojson }};
+
+  function updateBioCounter() {
+    if (bioInput && bioCounter) {
+      const len = bioInput.value.length;
+      bioCounter.textContent = len + ' / 300';
+    }
+  }
+
+  if (bioInput) {
+    bioInput.addEventListener('input', updateBioCounter);
+    updateBioCounter();
+  }
+
+  // Global helper to open the Profile / DP modal from anywhere
+  window.openProfileModal = function(focusTarget) {
+    if (modal) {
+      modal.style.display = 'flex';
+      actionField.value = '';
+      if (alertBox) alertBox.style.display = 'none';
+      if (focusTarget === 'bio' && bioInput) {
+        setTimeout(() => { bioInput.focus(); }, 100);
+      } else if (focusTarget === 'file' && fileInput) {
+        fileInput.click();
+      }
+    }
+  };
+
+  function closeModal() {
+    if (modal) {
+      modal.style.display = 'none';
+    }
+  }
+
+  if (closeBtn) closeBtn.addEventListener('click', closeModal);
+  if (cancelBtn) cancelBtn.addEventListener('click', closeModal);
+
+  // Close on Escape or click outside
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && modal && modal.style.display === 'flex') {
+      closeModal();
+    }
+  });
+
+  if (modal) {
+    modal.addEventListener('click', function(e) {
+      if (e.target === modal) closeModal();
+    });
+  }
+
+  // Toggle URL section
+  if (showUrlBtn && urlSection) {
+    showUrlBtn.addEventListener('click', function() {
+      urlSection.style.display = urlSection.style.display === 'none' ? 'block' : 'none';
+      if (urlSection.style.display === 'block' && urlInput) urlInput.focus();
+    });
+  }
+
+  // File upload preview
+  if (fileInput) {
+    fileInput.addEventListener('change', function() {
+      if (this.files && this.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          previewBox.innerHTML = '<img src="' + e.target.result + '" alt="DP preview" style="width:100%; height:100%; object-fit:cover; border-radius:50%;">';
+          actionField.value = ''; // Normal file save
+        };
+        reader.readAsDataURL(this.files[0]);
+      }
+    });
+  }
+
+  // URL preview
+  if (urlApplyBtn && urlInput) {
+    urlApplyBtn.addEventListener('click', function() {
+      const val = urlInput.value.trim();
+      if (val.startsWith('http://') || val.startsWith('https://')) {
+        const img = document.createElement('img');
+        img.src = val;
+        img.alt = 'DP preview';
+        img.style = 'width:100%; height:100%; object-fit:cover; border-radius:50%;';
+        img.onerror = function() {
+          showAlert('Could not load image from this URL. Please verify the link.', 'danger');
+        };
+        img.onload = function() {
+          previewBox.innerHTML = '';
+          previewBox.appendChild(img);
+          showAlert('Image loaded successfully!', 'success');
+        };
+      }
+    });
+  }
+
+  // Remove DP
+  if (removeDpBtn) {
+    removeDpBtn.addEventListener('click', function() {
+      actionField.value = 'remove';
+      previewBox.innerHTML = '<span>' + defaultInitial + '</span>';
+      if (urlInput) urlInput.value = '';
+      if (fileInput) fileInput.value = '';
+      showAlert('DP will be removed upon saving.', 'info');
+    });
+  }
+
+  function showAlert(msg, type) {
+    if (alertBox) {
+      alertBox.textContent = msg;
+      alertBox.className = 'modal-alert-box alert-' + (type || 'info');
+      alertBox.style.display = 'block';
+    }
+  }
+
+  // AJAX Submission for instant dynamic profile & DP update
+  if (form) {
+    form.addEventListener('submit', function(e) {
+      e.preventDefault();
+
+      if (btnText) btnText.style.display = 'none';
+      if (btnSpinner) btnSpinner.style.display = 'inline';
+      if (submitBtn) submitBtn.disabled = true;
+
+      const formData = new FormData(form);
+
+      fetch('{{ url_for("auth.profile") }}', {
+        method: 'POST',
+        headers: {
+          'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: formData
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (btnText) btnText.style.display = 'inline';
+        if (btnSpinner) btnSpinner.style.display = 'none';
+        if (submitBtn) submitBtn.disabled = false;
+
+        if (data.error) {
+          showAlert(data.error, 'danger');
+          return;
+        }
+
+        // Dynamically update visible avatars on the page
+        const newUrl = data.avatar_url;
+        document.querySelectorAll('.avatar-nav, .public-profile-top .avatar, .composer-avatar .avatar').forEach(box => {
+          if (newUrl) {
+            box.innerHTML = `<img src="${newUrl}" alt="Avatar">`;
+          } else {
+            box.innerHTML = defaultInitial;
+          }
+        });
+
+        // Dynamically update bio text on public profile page if present
+        const bioDisplay = document.getElementById('profileBioDisplay');
+        if (bioDisplay) {
+          if (data.bio && data.bio.trim()) {
+            bioDisplay.textContent = data.bio;
+            bioDisplay.style.display = 'block';
+            const placeholder = document.getElementById('profileBioPlaceholder');
+            if (placeholder) placeholder.style.display = 'none';
+          } else {
+            bioDisplay.textContent = '';
+            bioDisplay.style.display = 'none';
+            const placeholder = document.getElementById('profileBioPlaceholder');
+            if (placeholder) placeholder.style.display = 'inline-block';
+          }
+        }
+
+        closeModal();
+
+        // Optional quick notification flash
+        const toast = document.createElement('div');
+        toast.className = 'dynamic-toast-popup';
+        toast.textContent = data.message || 'Profile & DP updated!';
+        document.body.appendChild(toast);
+        setTimeout(() => { toast.remove(); }, 3200);
+      })
+      .catch(err => {
+        if (btnText) btnText.style.display = 'inline';
+        if (btnSpinner) btnSpinner.style.display = 'none';
+        if (submitBtn) submitBtn.disabled = false;
+        showAlert('Update error: ' + err.message, 'danger');
+      });
+    });
+  }
+
+  // Bind click event to any editable avatar element
+  document.addEventListener('click', function(e) {
+    const trigger = e.target.closest('.editable-avatar, .btn-edit-dp, .btn-add-bio');
+    if (trigger) {
+      e.preventDefault();
+      const target = trigger.getAttribute('data-target') || 'all';
+      window.openProfileModal(target);
+    }
+  });
+
+})();
+</script>
+{% endif %}

@@ -53,7 +53,7 @@
             </div>
             <span class="username">{{ g.user['username'] }}{% if g.user['role'] == 'admin' %} <span class="admin-badge">admin</span>{% endif %}</span>
           </a>
-          <a href="{{ url_for('auth.profile') }}" class="link-muted" title="Edit your profile photo">Edit Photo</a>
+          <a href="{{ url_for('auth.profile') }}" class="link-muted btn-edit-dp" title="Edit your profile photo & bio">Edit DP</a>
           <a href="{{ url_for('auth.logout') }}" class="link-muted">Log out</a>
         {% else %}
           <a href="{{ url_for('auth.login') }}" class="link-muted">Log in</a>
@@ -105,6 +105,9 @@
       }
     })();
   </script>
+
+  <!-- Dynamic Profile DP & Bio Modal -->
+  {% include "_profile_modal.html" %}
 
   <!-- Global Floating AI Agent: चित्राङ्ककः (Chitrankakah) -->
   {% include "_floating_agent.html" %}

@@ -202,11 +202,16 @@
     <aside class="feed-sidebar-col">
       <!-- Movie Agent Widget Card -->
       <div class="sidebar-widget-card agent-promo-card">
-        <div class="promo-badge">🤖 AI AGENT</div>
-        <h3>चित्राङ्ककः (Chitrankakah)</h3>
-        <p>Get in-depth analysis on any film, explore live community rating distributions on मान्यांकः, and ask for smart recommendations.</p>
+        <div class="promo-header-row" style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.8rem;">
+          <img src="{{ url_for('static', filename='img/chitrankakah.jpg') }}" alt="चित्राङ्ककः" style="width: 46px; height: 46px; border-radius: 12px; object-fit: cover; border: 1.5px solid var(--accent-movies); box-shadow: 0 4px 12px rgba(232, 184, 75, 0.25);">
+          <div>
+            <div class="promo-badge" style="font-size: 0.65rem; padding: 0.15rem 0.45rem;">AI AGENT</div>
+            <h3 style="margin: 0.15rem 0 0; font-size: 1.05rem;">चित्राङ्ककः</h3>
+          </div>
+        </div>
+        <p>Get in-depth cinema analysis, explore live community rating distributions on मान्यांकः, and ask for smart recommendations.</p>
         <button type="button" class="btn btn-small btn-agent-promo" onclick="if(window.openChitrankakah){ window.openChitrankakah(); } else { window.location.href='{{ url_for('agent.index') }}'; }">
-          🤖 Ask चित्राङ्ककः
+          Ask चित्राङ्ककः
         </button>
       </div>
 

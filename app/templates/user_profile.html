@@ -1,18 +1,30 @@
 {% extends "base.html" %}
-{% block title %}@{{ profile_user['username'] }} — मन्यांकः{% endblock %}
+{% block title %}@{{ profile_user['username'] }} — मान्यांकः (Maanyankah){% endblock %}
 {% block content %}
 <div class="container page">
 
   <!-- Public Profile Header -->
   <div class="public-profile-card">
     <div class="public-profile-top">
-      <div class="avatar avatar-lg avatar-{{ profile_user['id'] % 3 }}">
-        {% if profile_user['avatar_url'] %}
-          <img src="{{ profile_user['avatar_url'] }}" alt="{{ profile_user['username'] }}">
-        {% else %}
-          {{ profile_user['username'][0]|upper }}
-        {% endif %}
-      </div>
+      {% if g.user and g.user['id'] == profile_user['id'] %}
+        <div class="avatar avatar-lg avatar-{{ profile_user['id'] % 3 }} editable-avatar" title="Click to change your photo (DP) or bio" role="button" tabindex="0">
+          {% if profile_user['avatar_url'] %}
+            <img src="{{ profile_user['avatar_url'] }}" alt="{{ profile_user['username'] }}">
+          {% else %}
+            {{ profile_user['username'][0]|upper }}
+          {% endif %}
+          <span class="avatar-hover-overlay">📷 Edit</span>
+        </div>
+      {% else %}
+        <div class="avatar avatar-lg avatar-{{ profile_user['id'] % 3 }}">
+          {% if profile_user['avatar_url'] %}
+            <img src="{{ profile_user['avatar_url'] }}" alt="{{ profile_user['username'] }}">
+          {% else %}
+            {{ profile_user['username'][0]|upper }}
+          {% endif %}
+        </div>
+      {% endif %}
+
       <div class="public-profile-info">
         <div class="public-name-row">
           <h1>{{ profile_user['username'] }}</h1>
@@ -23,6 +35,21 @@
             <span class="status-pill status-suspended">Account Suspended</span>
           {% endif %}
         </div>
+
+        <!-- User Bio Section -->
+        <div class="profile-bio-container">
+          {% if profile_user['bio'] %}
+            <p class="profile-bio-text" id="profileBioDisplay">{{ profile_user['bio'] }}</p>
+          {% else %}
+            <p class="profile-bio-text" id="profileBioDisplay" style="display: none;"></p>
+            {% if g.user and g.user['id'] == profile_user['id'] %}
+              <button type="button" id="profileBioPlaceholder" class="btn-add-bio" data-target="bio">
+                ✍️ Add a bio to tell fans about yourself
+              </button>
+            {% endif %}
+          {% endif %}
+        </div>
+
         <p class="text-muted-sm" style="margin: 0.2rem 0 0.6rem;">
           Member since {{ profile_user['created_at'][:10] if profile_user['created_at'] else 'early adopter' }}
         </p>
@@ -39,9 +66,9 @@
 
       <div class="public-profile-actions">
         {% if g.user and g.user['id'] == profile_user['id'] %}
-          <a href="{{ url_for('auth.profile') }}" class="btn btn-small">
-            📷 Edit Profile Photo
-          </a>
+          <button type="button" class="btn btn-small btn-edit-dp">
+            📷 Edit DP & Bio
+          </button>
         {% endif %}
 
         {% if g.user and g.user['id'] != profile_user['id'] %}
