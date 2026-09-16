@@ -38,6 +38,24 @@
         <div class="item-card-body">
           <span class="item-type">{{ item['type'] }}</span>
           <h3>{{ item['title'] }}</h3>
+
+          <div class="item-avg-score-row" title="Community Average Rating">
+            {% if item['rating_count'] > 0 %}
+              <span class="star-gold">★</span>
+              <strong class="item-avg-num">{{ item['avg_rating'] }}</strong>
+              <span class="item-rating-count">({{ item['rating_count'] }} {% if item['rating_count'] == 1 %}rating{% else %}ratings{% endif %})</span>
+            {% else %}
+              <span class="item-rating-none">No ratings yet</span>
+            {% endif %}
+          </div>
+
+          {% if item['type'] == 'movie' %}
+            <div class="item-agent-link-wrap">
+              <a href="{{ url_for('agent.index', q=item['title']) }}" class="btn-ask-agent" title="Ask Movie Agent about this film">
+                🤖 Ask Movie Agent
+              </a>
+            </div>
+          {% endif %}
           {% if g.user %}
             <form method="post" action="{{ url_for('items.rate', item_id=item['id']) }}" class="rate-form">
               <div class="star-rating-wrap">

@@ -3,6 +3,7 @@ from flask import Blueprint, render_template, request, redirect, url_for, g, fla
 from app.db import get_db
 from app.auth_utils import login_required
 from app.services.sentiment import analyze, label
+from app.services.item_media import resolve_image_url
 
 bp = Blueprint("feed", __name__, url_prefix="/feed")
 
@@ -33,22 +34,65 @@ def feed():
                 flash("Official announcement published and pinned to feed!")
         return redirect(url_for("feed.feed"))
 
-    posts = db.execute(
-        """
-        SELECT posts.*, users.username, users.role AS user_role, users.avatar_url, items.title AS item_title
+    filter_tab = request.args.get("filter", "all")
+
+    # Base query
+    query = """
+        SELECT posts.*, 
+               users.username, users.role AS user_role, users.avatar_url, 
+               items.title AS item_title, items.type AS item_type, items.metadata AS item_metadata,
+               COALESCE(ROUND((SELECT AVG(rating) FROM user_preferences WHERE item_id = items.id), 1), 0) AS item_avg_rating
         FROM posts
         JOIN users ON posts.user_id = users.id
         LEFT JOIN items ON posts.item_id = items.id
-        ORDER BY posts.is_pinned DESC, posts.created_at DESC
-        LIMIT 50
+    """
+    params = []
+
+    if filter_tab == "pinned":
+        query += " WHERE posts.is_pinned = 1"
+    elif filter_tab == "positive":
+        query += " WHERE posts.sentiment_score > 0.15"
+    elif filter_tab in ("movie", "song", "team"):
+        query += " WHERE items.type = ?"
+        params.append(filter_tab)
+
+    query += " ORDER BY posts.is_pinned DESC, posts.created_at DESC LIMIT 50"
+    posts = db.execute(query, params).fetchall()
+
+    posts_with_labels = []
+    for post in posts:
+        post_dict = dict(post)
+        post_dict["sentiment_label"] = label(post["sentiment_score"])
+        # Resolve tagged item image if present
+        if post["item_title"]:
+            item_mock = {
+                "type": post["item_type"],
+                "title": post["item_title"],
+                "metadata": post["item_metadata"]
+            }
+            post_dict["item_image_url"] = resolve_image_url(item_mock)
+        else:
+            post_dict["item_image_url"] = None
+        posts_with_labels.append(post_dict)
+
+    # Popular / Trending tagged items in feed
+    trending_items = db.execute(
+        """
+        SELECT i.id, i.title, i.type, i.metadata, COUNT(p.id) AS post_count
+        FROM items i
+        JOIN posts p ON i.id = p.item_id
+        GROUP BY i.id
+        ORDER BY post_count DESC
+        LIMIT 5
         """
     ).fetchall()
 
-    posts_with_labels = [
-        {**dict(post), "sentiment_label": label(post["sentiment_score"])}
-        for post in posts
-    ]
+    all_items = db.execute("SELECT id, title, type FROM items ORDER BY type, title").fetchall()
 
-    items = db.execute("SELECT id, title FROM items ORDER BY title").fetchall()
-
-    return render_template("feed.html", posts=posts_with_labels, items=items)
+    return render_template(
+        "feed.html",
+        posts=posts_with_labels,
+        items=all_items,
+        active_filter=filter_tab,
+        trending_items=trending_items,
+    )

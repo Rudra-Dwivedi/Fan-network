@@ -1,0 +1,390 @@
+{% extends "base.html" %}
+{% block title %}AI Movie Agent — मान्यांकः (Maanyankah){% endblock %}
+{% block content %}
+<div class="container page">
+
+  <div class="agent-hero-head">
+    <div class="agent-title-row">
+      <div class="agent-badge-icon">🤖</div>
+      <div>
+        <h1 class="agent-main-title">AI Movie & Ratings Agent</h1>
+        <p class="page-sub">Ask anything about movies, analyze community rating distributions on Maanyankah, and get tailored film suggestions.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quick Prompts Bar -->
+  <div class="agent-prompt-chips">
+    <span class="chips-label">Quick prompts:</span>
+    <button type="button" class="prompt-chip" data-query="Highest rated movies on Maanyankah">🏆 Top Rated Movies</button>
+    <button type="button" class="prompt-chip" data-query="Tell me about Inception">🌀 Inception Breakdown</button>
+    <button type="button" class="prompt-chip" data-query="What is the rating of The Dark Knight?">🦇 The Dark Knight</button>
+    <button type="button" class="prompt-chip" data-query="Tell me about Parasite">🏠 Parasite Consensus</button>
+    <button type="button" class="prompt-chip" data-query="Recommend a sci-fi thriller">🚀 Sci-Fi Thrillers</button>
+  </div>
+
+  <!-- Search & Ask Form -->
+  <div class="agent-input-container">
+    <form id="agent-form" class="agent-form-bar">
+      <div class="agent-input-wrapper">
+        <span class="agent-search-icon">🔍</span>
+        <input type="text" id="agent-query" name="query" value="{{ initial_query or '' }}" placeholder="Ask about a movie, ratings, sentiment, or ask for recommendations..." autocomplete="off" required>
+      </div>
+      
+      {% if catalog_movies %}
+        <select id="catalog-select" class="agent-movie-select" title="Or pick a movie directly from catalog">
+          <option value="">Choose a movie...</option>
+          {% for cm in catalog_movies %}
+            <option value="Tell me about {{ cm['title'] }}">{{ cm['title'] }}</option>
+          {% endfor %}
+        </select>
+      {% endif %}
+
+      <button type="submit" id="agent-submit-btn" class="btn btn-agent">
+        <span class="btn-text">Ask Agent</span>
+        <span class="btn-spinner" style="display: none;">⏳</span>
+      </button>
+    </form>
+  </div>
+
+  <!-- Agent Responses Area -->
+  <div id="agent-responses" class="agent-responses-stream">
+    {% if initial_response %}
+      <div class="agent-message-card" id="initial-agent-result">
+        {% if initial_response.type == 'movie_detail' %}
+          {% set m = initial_response.movie %}
+          {% set s = m.stats %}
+          <div class="agent-movie-spotlight">
+            <div class="spotlight-poster-col">
+              {% if m.image_url %}
+                <img src="{{ m.image_url }}" alt="{{ m.title }}" class="agent-poster-img">
+              {% else %}
+                <div class="agent-poster-placeholder">🎬</div>
+              {% endif %}
+            </div>
+
+            <div class="spotlight-content-col">
+              <div class="spotlight-header">
+                <div>
+                  <h2 class="spotlight-movie-title">{{ m.title }} <span class="spotlight-year">({{ m.year }})</span></h2>
+                  <div class="spotlight-director">Directed by <strong>{{ m.director }}</strong></div>
+                </div>
+                <div class="spotlight-score-badge" title="Maanyankah Community Average">
+                  <span class="score-star">★</span>
+                  <span class="score-val">{{ s.avg_rating }}</span>
+                  <span class="score-max">/ 5</span>
+                  <span class="score-count">({{ s.rating_count }} {% if s.rating_count == 1 %}review{% else %}reviews{% endif %})</span>
+                </div>
+              </div>
+
+              <div class="spotlight-genres">
+                {% for g_tag in m.genres %}
+                  <span class="genre-pill">{{ g_tag }}</span>
+                {% endfor %}
+              </div>
+
+              <p class="spotlight-synopsis">{{ m.synopsis }}</p>
+
+              <!-- Community Ratings Analytics -->
+              <div class="agent-analytics-box">
+                <h3 class="analytics-title">📊 Maanyankah Community Ratings Breakdown</h3>
+                <div class="sentiment-banner">
+                  <span>{{ s.sentiment_summary }}</span>
+                </div>
+
+                <div class="star-breakdown-grid">
+                  {% for star_num in [5, 4, 3, 2, 1] %}
+                    {% set b_data = s.breakdown[star_num] %}
+                    <div class="star-breakdown-row">
+                      <span class="breakdown-star-label">{{ star_num }} ★</span>
+                      <div class="breakdown-bar-track">
+                        <div class="breakdown-bar-fill" style="width: {{ b_data.pct }}%"></div>
+                      </div>
+                      <span class="breakdown-pct">{{ b_data.pct }}% <small>({{ b_data.count }})</small></span>
+                    </div>
+                  {% endfor %}
+                </div>
+
+                {% if s.posts %}
+                  <div class="community-quotes-section">
+                    <h4 class="quotes-heading">💬 Member Reactions & Reviews</h4>
+                    <div class="quotes-list">
+                      {% for post in s.posts %}
+                        <div class="quote-item">
+                          <strong class="quote-author">@{{ post.username }}:</strong>
+                          <span class="quote-text">"{{ post.content }}"</span>
+                        </div>
+                      {% endfor %}
+                    </div>
+                  </div>
+                {% endif %}
+              </div>
+
+              <div class="spotlight-actions">
+                <a href="{{ url_for('items.browse', type='movie') }}" class="btn btn-small">Rate this on Browse</a>
+              </div>
+            </div>
+          </div>
+
+        {% elif initial_response.type == 'ranking' %}
+          <div class="agent-ranking-view">
+            <h2 class="ranking-heading">{{ initial_response.title }}</h2>
+            <p class="ranking-sub">{{ initial_response.message }}</p>
+            <div class="agent-cards-grid">
+              {% for rm in initial_response.movies %}
+                <div class="agent-mini-card">
+                  {% if rm.image_url %}
+                    <img src="{{ rm.image_url }}" alt="{{ rm.title }}" class="mini-card-poster">
+                  {% else %}
+                    <div class="mini-card-placeholder">🎬</div>
+                  {% endif %}
+                  <div class="mini-card-info">
+                    <h4>{{ rm.title }}</h4>
+                    <div class="mini-card-score">
+                      <span class="star-gold">★</span> <strong>{{ rm.avg_rating }}</strong> <small>({{ rm.rating_count }} ratings)</small>
+                    </div>
+                    <a href="{{ url_for('agent.index', q=rm.title) }}" class="btn-ghost btn-xs">Deep Dive</a>
+                  </div>
+                </div>
+              {% endfor %}
+            </div>
+          </div>
+
+        {% elif initial_response.type == 'recommendations' %}
+          <div class="agent-recommendation-view">
+            <h2 class="ranking-heading">{{ initial_response.title }}</h2>
+            <p class="ranking-sub">{{ initial_response.message }}</p>
+            <div class="agent-cards-grid">
+              {% for rm in initial_response.movies %}
+                <div class="agent-mini-card">
+                  {% if rm.image_url %}
+                    <img src="{{ rm.image_url }}" alt="{{ rm.title }}" class="mini-card-poster">
+                  {% else %}
+                    <div class="mini-card-placeholder">🎬</div>
+                  {% endif %}
+                  <div class="mini-card-info">
+                    <h4>{{ rm.title }}</h4>
+                    <div class="mini-card-score">
+                      <span class="star-gold">★</span> <strong>{{ rm.avg_rating }}</strong> <small>({{ rm.rating_count }} ratings)</small>
+                    </div>
+                    <a href="{{ url_for('agent.index', q=rm.title) }}" class="btn-ghost btn-xs">Ask Agent</a>
+                  </div>
+                </div>
+              {% endfor %}
+            </div>
+          </div>
+
+        {% else %}
+          <div class="agent-general-answer">
+            <h3>{{ initial_response.title }}</h3>
+            <p>{{ initial_response.message }}</p>
+          </div>
+        {% endif %}
+      </div>
+    {% else %}
+      <!-- Welcome Empty State Card -->
+      <div class="agent-welcome-card">
+        <div class="welcome-icon">🎬</div>
+        <h3>Welcome to the Maanyankah Film Intelligence Agent</h3>
+        <p>I analyze real viewer ratings, community reactions, and deep film trivia across our catalog. Pick a starter prompt above, choose a movie, or type any query to begin!</p>
+      </div>
+    {% endif %}
+  </div>
+
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('agent-form');
+    const input = document.getElementById('agent-query');
+    const select = document.getElementById('catalog-select');
+    const stream = document.getElementById('agent-responses');
+    const submitBtn = document.getElementById('agent-submit-btn');
+    const btnText = submitBtn.querySelector('.btn-text');
+    const btnSpinner = submitBtn.querySelector('.btn-spinner');
+
+    // Quick prompt chip clicks
+    document.querySelectorAll('.prompt-chip').forEach(function(chip) {
+      chip.addEventListener('click', function() {
+        const q = this.getAttribute('data-query');
+        input.value = q;
+        submitQuery(q);
+      });
+    });
+
+    // Catalog movie dropdown selector
+    if (select) {
+      select.addEventListener('change', function() {
+        if (this.value) {
+          input.value = this.value;
+          submitQuery(this.value);
+        }
+      });
+    }
+
+    // Form submit
+    form.addEventListener('submit', function(e) {
+      e.preventDefault();
+      const q = input.value.trim();
+      if (q) {
+        submitQuery(q);
+      }
+    });
+
+    function renderMovieDetail(m) {
+      const s = m.stats;
+      let breakdownHtml = '';
+      [5, 4, 3, 2, 1].forEach(function(star) {
+        const b = s.breakdown[star] || { pct: 0, count: 0 };
+        breakdownHtml += `
+          <div class="star-breakdown-row">
+            <span class="breakdown-star-label">${star} ★</span>
+            <div class="breakdown-bar-track">
+              <div class="breakdown-bar-fill" style="width: ${b.pct}%"></div>
+            </div>
+            <span class="breakdown-pct">${b.pct}% <small>(${b.count})</small></span>
+          </div>
+        `;
+      });
+
+      let quotesHtml = '';
+      if (s.posts && s.posts.length > 0) {
+        quotesHtml = `
+          <div class="community-quotes-section">
+            <h4 class="quotes-heading">💬 Member Reactions & Reviews</h4>
+            <div class="quotes-list">
+              ${s.posts.map(p => `
+                <div class="quote-item">
+                  <strong class="quote-author">@${p.username}:</strong>
+                  <span class="quote-text">"${p.content}"</span>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      }
+
+      let genresHtml = (m.genres || []).map(g => `<span class="genre-pill">${g}</span>`).join('');
+
+      return `
+        <div class="agent-movie-spotlight">
+          <div class="spotlight-poster-col">
+            ${m.image_url ? `<img src="${m.image_url}" alt="${m.title}" class="agent-poster-img">` : `<div class="agent-poster-placeholder">🎬</div>`}
+          </div>
+          <div class="spotlight-content-col">
+            <div class="spotlight-header">
+              <div>
+                <h2 class="spotlight-movie-title">${m.title} <span class="spotlight-year">(${m.year})</span></h2>
+                <div class="spotlight-director">Directed by <strong>${m.director}</strong></div>
+              </div>
+              <div class="spotlight-score-badge" title="Maanyankah Community Average">
+                <span class="score-star">★</span>
+                <span class="score-val">${s.avg_rating}</span>
+                <span class="score-max">/ 5</span>
+                <span class="score-count">(${s.rating_count} ${s.rating_count === 1 ? 'review' : 'reviews'})</span>
+              </div>
+            </div>
+            <div class="spotlight-genres">${genresHtml}</div>
+            <p class="spotlight-synopsis">${m.synopsis}</p>
+            <div class="agent-analytics-box">
+              <h3 class="analytics-title">📊 Maanyankah Community Ratings Breakdown</h3>
+              <div class="sentiment-banner"><span>${s.sentiment_summary}</span></div>
+              <div class="star-breakdown-grid">${breakdownHtml}</div>
+              ${quotesHtml}
+            </div>
+            <div class="spotlight-actions">
+              <a href="/items/?type=movie" class="btn btn-small">Rate this on Browse</a>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderGrid(title, message, movies) {
+      let cards = movies.map(rm => `
+        <div class="agent-mini-card">
+          ${rm.image_url ? `<img src="${rm.image_url}" alt="${rm.title}" class="mini-card-poster">` : `<div class="mini-card-placeholder">🎬</div>`}
+          <div class="mini-card-info">
+            <h4>${rm.title}</h4>
+            <div class="mini-card-score">
+              <span class="star-gold">★</span> <strong>${rm.avg_rating}</strong> <small>(${rm.rating_count} ratings)</small>
+            </div>
+            <button type="button" class="btn-ghost btn-xs ask-again-btn" data-query="Tell me about ${rm.title}">Deep Dive</button>
+          </div>
+        </div>
+      `).join('');
+
+      return `
+        <div class="agent-ranking-view">
+          <h2 class="ranking-heading">${title}</h2>
+          <p class="ranking-sub">${message}</p>
+          <div class="agent-cards-grid">${cards}</div>
+        </div>
+      `;
+    }
+
+    function submitQuery(q) {
+      btnText.style.display = 'none';
+      btnSpinner.style.display = 'inline';
+      submitBtn.disabled = true;
+
+      fetch('/agent/ask', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query: q })
+      })
+      .then(res => res.json())
+      .then(data => {
+        btnText.style.display = 'inline';
+        btnSpinner.style.display = 'none';
+        submitBtn.disabled = false;
+
+        let content = '';
+        if (data.type === 'movie_detail') {
+          content = renderMovieDetail(data.movie);
+        } else if (data.type === 'ranking' || data.type === 'recommendations') {
+          content = renderGrid(data.title, data.message, data.movies || []);
+        } else {
+          content = `
+            <div class="agent-general-answer">
+              <h3>${data.title || 'Film Agent'}</h3>
+              <p>${data.message}</p>
+            </div>
+          `;
+        }
+
+        const card = document.createElement('div');
+        card.className = 'agent-message-card';
+        card.innerHTML = content;
+
+        // Add suggestion chips under response if any
+        if (data.suggestions && data.suggestions.length > 0) {
+          const suggestionsDiv = document.createElement('div');
+          suggestionsDiv.className = 'agent-followup-suggestions';
+          suggestionsDiv.innerHTML = '<span class="followup-label">Follow-up questions:</span> ' +
+            data.suggestions.map(s => `<button type="button" class="prompt-chip prompt-chip-sm" data-query="${s}">${s}</button>`).join('');
+          card.appendChild(suggestionsDiv);
+        }
+
+        stream.innerHTML = '';
+        stream.appendChild(card);
+
+        // Bind new buttons
+        card.querySelectorAll('.prompt-chip, .ask-again-btn').forEach(btn => {
+          btn.addEventListener('click', function() {
+            const nextQ = this.getAttribute('data-query');
+            input.value = nextQ;
+            submitQuery(nextQ);
+          });
+        });
+      })
+      .catch(err => {
+        btnText.style.display = 'inline';
+        btnSpinner.style.display = 'none';
+        submitBtn.disabled = false;
+        stream.innerHTML = `<div class="agent-message-card text-danger">Error connecting to Film Agent: ${err.message}</div>`;
+      });
+    }
+  });
+</script>
+{% endblock %}

@@ -15,10 +15,30 @@ def browse():
 
     if item_type in ("movie", "song", "team"):
         items = db.execute(
-            "SELECT * FROM items WHERE type = ? ORDER BY title", (item_type,)
+            """
+            SELECT i.*,
+                   COALESCE(ROUND(AVG(p.rating), 1), 0) AS avg_rating,
+                   COUNT(p.rating) AS rating_count
+            FROM items i
+            LEFT JOIN user_preferences p ON i.id = p.item_id
+            WHERE i.type = ?
+            GROUP BY i.id
+            ORDER BY i.title
+            """,
+            (item_type,),
         ).fetchall()
     else:
-        items = db.execute("SELECT * FROM items ORDER BY type, title").fetchall()
+        items = db.execute(
+            """
+            SELECT i.*,
+                   COALESCE(ROUND(AVG(p.rating), 1), 0) AS avg_rating,
+                   COUNT(p.rating) AS rating_count
+            FROM items i
+            LEFT JOIN user_preferences p ON i.id = p.item_id
+            GROUP BY i.id
+            ORDER BY i.type, i.title
+            """
+        ).fetchall()
 
     items = with_image_urls(items)
 

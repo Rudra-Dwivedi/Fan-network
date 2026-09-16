@@ -11,7 +11,7 @@
     })();
   </script>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{% block title %}मन्यांकः (Manyankah){% endblock %}</title>
+  <title>{% block title %}मान्यांकः (Maanyankah){% endblock %}</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&family=Noto+Serif+Devanagari:wght@600;700&display=swap" rel="stylesheet">
@@ -20,12 +20,13 @@
 <body>
   <header class="site-header">
     <div class="site-header-inner">
-      <a href="{{ url_for('index') }}" class="brand" title="मन्यांकः (Manyankah)">
-        <span class="brand-text">मन्यांकः</span>
-        <span class="brand-sub">Manyankah</span>
+      <a href="{{ url_for('index') }}" class="brand" title="मान्यांकः (Maanyankah)">
+        <span class="brand-text">मान्यांकः</span>
+        <span class="brand-sub">Maanyankah</span>
       </a>
       <nav class="site-nav">
         <a href="{{ url_for('items.browse') }}">Browse</a>
+        <a href="{{ url_for('agent.index') }}">Movie Agent</a>
         <a href="{{ url_for('feed.feed') }}">Feed</a>
         {% if g.user %}
           <a href="{{ url_for('recommend.people') }}">Find people</a>

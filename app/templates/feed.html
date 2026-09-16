@@ -1,80 +1,285 @@
 {% extends "base.html" %}
-{% block title %}Feed{% endblock %}
+{% block title %}Community Feed — मान्यांकः (Maanyankah){% endblock %}
 {% block content %}
 <div class="container page">
 
-  <div class="page-head">
-    <h1>Community feed</h1>
-    <p class="page-sub">What people are saying about the movies, music, and teams they've rated.</p>
+  <div class="feed-header-section">
+    <div>
+      <h1 class="feed-main-title">Community Feed</h1>
+      <p class="page-sub">Real reviews, hot takes, and discussions from passionate fans across movies, music, and sports.</p>
+    </div>
   </div>
 
-  {% if g.user %}
-    <form method="post" class="composer">
-      <div class="avatar avatar-{{ g.user['id'] % 3 }}">
-        {% if g.user['avatar_url'] %}
-          <img src="{{ g.user['avatar_url'] }}" alt="{{ g.user['username'] }}">
-        {% else %}
-          {{ g.user['username'][0]|upper }}
-        {% endif %}
-      </div>
-      <div class="composer-fields">
-        <textarea name="content" rows="2" required placeholder="e.g. That new album is a masterpiece, honestly one of the best this year"></textarea>
-        <div class="composer-actions">
-          <select name="item_id">
-            <option value="">Tag an item (optional)</option>
-            {% for item in items %}
-              <option value="{{ item['id'] }}">{{ item['title'] }}</option>
-            {% endfor %}
-          </select>
-          {% if g.user['role'] == 'admin' %}
-            <label class="checkbox-pin" title="Pin this post to the top as an official announcement for all members">
-              <input type="checkbox" name="is_pinned" value="1"> 📌 Pin Announcement
-            </label>
-          {% endif %}
-          <button type="submit" class="btn btn-small">Post</button>
-        </div>
-      </div>
-    </form>
-  {% else %}
-    <div class="empty-state">
-      <p><a href="{{ url_for('auth.login') }}" class="link-underline">Log in</a> to post.</p>
-    </div>
-  {% endif %}
+  <div class="feed-layout-grid">
+    <!-- Main Stream Column -->
+    <div class="feed-stream-col">
 
-  <ul class="feed-list">
-    {% for post in posts %}
-      <li class="feed-post sentiment-{{ post.sentiment_label }} {% if post.is_pinned %}feed-post-pinned{% endif %}">
-        {% if post.is_pinned %}
-          <div class="pinned-banner">
-            <span>📌 OFFICIAL ADMIN ANNOUNCEMENT</span>
-          </div>
-        {% endif %}
-        <div class="feed-post-main">
-          <div class="avatar avatar-{{ post.user_id % 3 }}">
-            {% if post.avatar_url %}
-              <img src="{{ post.avatar_url }}" alt="{{ post.username }}">
-            {% else %}
-              {{ post.username[0]|upper }}
-            {% endif %}
-          </div>
-          <div class="feed-post-body">
-            <div class="feed-post-meta">
-              <a href="{{ url_for('recommend.profile', username=post.username) }}" class="feed-author-link">
-                {{ post.username }}
-              </a>
-              {% if post.user_role == 'admin' %}
-                <span class="admin-badge" style="font-size: 0.6rem; padding: 0.05rem 0.35rem;">admin</span>
+      <!-- Composer Card -->
+      {% if g.user %}
+        <div class="feed-composer-card">
+          <div class="composer-top-row">
+            <div class="avatar avatar-{{ g.user['id'] % 3 }} composer-avatar">
+              {% if g.user['avatar_url'] %}
+                <img src="{{ g.user['avatar_url'] }}" alt="{{ g.user['username'] }}">
+              {% else %}
+                {{ g.user['username'][0]|upper }}
               {% endif %}
-              {% if post.item_title %}<span class="item-tag">on {{ post.item_title }}</span>{% endif %}
-              <span class="sentiment-badge">{{ post.sentiment_label }}</span>
-              <span class="text-muted-sm" style="margin-left: auto;">{{ post.created_at[:16] if post.created_at else '' }}</span>
             </div>
-            <p class="feed-post-text">{{ post.content }}</p>
+            <div class="composer-user-greeting">
+              <strong>Post as @{{ g.user['username'] }}</strong>
+              <span class="text-muted-sm">Share your thoughts with the community</span>
+            </div>
+          </div>
+
+          <form method="post" class="composer-form">
+            <textarea name="content" id="composer-textarea" rows="3" required placeholder="What are you watching, listening to, or supporting? Drop your review or opinion..."></textarea>
+            
+            <div class="composer-quick-prompts">
+              <span class="prompt-hint">Ideas:</span>
+              <button type="button" class="composer-prompt-btn" data-template="Just finished watching . Outstanding performance!">🎬 Review a movie</button>
+              <button type="button" class="composer-prompt-btn" data-template="This track has been on repeat all week! 🎵">🎵 Music review</button>
+              <button type="button" class="composer-prompt-btn" data-template="Incredible match today, what a performance! 🏆">🏆 Match reaction</button>
+            </div>
+
+            <div class="composer-bottom-bar">
+              <div class="composer-tag-select-wrap">
+                <span class="tag-icon">🏷️</span>
+                <select name="item_id" class="composer-item-select">
+                  <option value="">Tag an item (optional)...</option>
+                  {% for item in items %}
+                    <option value="{{ item['id'] }}">
+                      {% if item['type'] == 'movie' %}🎬{% elif item['type'] == 'song' %}🎵{% else %}🏆{% endif %}
+                      {{ item['title'] }} ({{ item['type'] }})
+                    </option>
+                  {% endfor %}
+                </select>
+              </div>
+
+              <div class="composer-submit-group">
+                {% if g.user['role'] == 'admin' %}
+                  <label class="checkbox-pin-pill" title="Pin announcement to top of the feed for all members">
+                    <input type="checkbox" name="is_pinned" value="1"> 📌 Pin Announcement
+                  </label>
+                {% endif %}
+                <button type="submit" class="btn btn-small btn-publish">Publish Post</button>
+              </div>
+            </div>
+          </form>
+        </div>
+      {% else %}
+        <div class="feed-login-prompt-card">
+          <div class="login-prompt-icon">💬</div>
+          <div>
+            <strong>Join the conversation</strong>
+            <p>Log in or create a free account to share reviews, tag movies/tracks, and connect with members.</p>
+          </div>
+          <a href="{{ url_for('auth.login') }}" class="btn btn-small">Log In</a>
+        </div>
+      {% endif %}
+
+      <!-- Filter Tabs Navigation -->
+      <div class="feed-filter-tabs">
+        <a href="{{ url_for('feed.feed', filter='all') }}" class="feed-tab-btn {{ 'active' if active_filter == 'all' }}">All Posts</a>
+        <a href="{{ url_for('feed.feed', filter='pinned') }}" class="feed-tab-btn {{ 'active' if active_filter == 'pinned' }}">📌 Pinned</a>
+        <a href="{{ url_for('feed.feed', filter='positive') }}" class="feed-tab-btn {{ 'active' if active_filter == 'positive' }}">✨ Loved It</a>
+        <a href="{{ url_for('feed.feed', filter='movie') }}" class="feed-tab-btn {{ 'active' if active_filter == 'movie' }}">🎬 Movies</a>
+        <a href="{{ url_for('feed.feed', filter='song') }}" class="feed-tab-btn {{ 'active' if active_filter == 'song' }}">🎵 Music</a>
+        <a href="{{ url_for('feed.feed', filter='team') }}" class="feed-tab-btn {{ 'active' if active_filter == 'team' }}">🏆 Sports</a>
+      </div>
+
+      <!-- Feed Stream -->
+      {% if posts|length == 0 %}
+        <div class="empty-state">
+          <p>No posts found in this category.</p>
+          <p class="empty-sub"><a href="{{ url_for('feed.feed') }}" class="link-underline">View all community posts</a></p>
+        </div>
+      {% endif %}
+
+      <div class="feed-cards-container">
+        {% for post in posts %}
+          <article class="feed-card sentiment-card-{{ post.sentiment_label }} {% if post.is_pinned %}feed-card-pinned{% endif %}">
+            
+            {% if post.is_pinned %}
+              <div class="feed-pinned-header">
+                <span class="pinned-badge-chip">⭐ OFFICIAL ANNOUNCEMENT</span>
+              </div>
+            {% endif %}
+
+            <div class="feed-card-top">
+              <a href="{{ url_for('recommend.profile', username=post.username) }}" class="feed-avatar-link">
+                <div class="avatar avatar-{{ post.user_id % 3 }} feed-user-avatar">
+                  {% if post.avatar_url %}
+                    <img src="{{ post.avatar_url }}" alt="{{ post.username }}">
+                  {% else %}
+                    {{ post.username[0]|upper }}
+                  {% endif %}
+                </div>
+              </a>
+
+              <div class="feed-author-meta">
+                <div class="author-name-row">
+                  <a href="{{ url_for('recommend.profile', username=post.username) }}" class="author-username-link">
+                    {{ post.username }}
+                  </a>
+                  {% if post.user_role == 'admin' %}
+                    <span class="admin-badge-sm">Admin</span>
+                  {% endif %}
+                </div>
+                <time class="post-time-stamp" title="{{ post.created_at }}">
+                  {{ post.created_at[:16] if post.created_at else '' }}
+                </time>
+              </div>
+
+              <!-- Sentiment Pill -->
+              <div class="feed-sentiment-wrap">
+                {% if post.sentiment_label == 'positive' %}
+                  <span class="sentiment-pill pill-positive" title="AI Sentiment: Loved / Positive">✨ Loved it</span>
+                {% elif post.sentiment_label == 'negative' %}
+                  <span class="sentiment-pill pill-negative" title="AI Sentiment: Critical">💥 Critical</span>
+                {% else %}
+                  <span class="sentiment-pill pill-neutral" title="AI Sentiment: Neutral">⚖️ Neutral</span>
+                {% endif %}
+              </div>
+            </div>
+
+            <!-- Post Content Text -->
+            <div class="feed-card-content">
+              <p class="feed-text-body">{{ post.content }}</p>
+            </div>
+
+            <!-- Tagged Item Preview Box -->
+            {% if post.item_title %}
+              <div class="feed-tagged-item-box">
+                {% if post.item_image_url %}
+                  <img src="{{ post.item_image_url }}" alt="{{ post.item_title }}" class="tagged-thumb-img">
+                {% else %}
+                  <div class="tagged-thumb-placeholder">
+                    {% if post.item_type == 'movie' %}🎬{% elif post.item_type == 'song' %}🎵{% else %}🏆{% endif %}
+                  </div>
+                {% endif %}
+
+                <div class="tagged-item-info">
+                  <span class="tagged-badge-type">{{ post.item_type|upper }}</span>
+                  <strong class="tagged-title">{{ post.item_title }}</strong>
+                  <div class="tagged-score-row">
+                    {% if post.item_avg_rating > 0 %}
+                      <span class="star-gold">★</span> <span>{{ post.item_avg_rating }} / 5 community score</span>
+                    {% else %}
+                      <span class="text-muted-sm">Unrated yet</span>
+                    {% endif %}
+                  </div>
+                </div>
+
+                <div class="tagged-item-actions">
+                  {% if post.item_type == 'movie' %}
+                    <a href="{{ url_for('agent.index', q=post.item_title) }}" class="btn-ghost btn-xs" title="Ask Movie Agent">🤖 Ask Agent</a>
+                  {% endif %}
+                  <a href="{{ url_for('items.browse') }}" class="btn-ghost btn-xs" title="Rate this item">Rate</a>
+                </div>
+              </div>
+            {% endif %}
+
+            <!-- Interactive Post Action Bar -->
+            <div class="feed-card-footer">
+              <button type="button" class="post-action-btn like-btn" onclick="toggleLike(this)">
+                <span class="like-icon">🤍</span>
+                <span class="like-label">Like</span>
+                <span class="like-counter"></span>
+              </button>
+
+              <button type="button" class="post-action-btn share-btn" onclick="copyPostLink(this)">
+                <span>🔗</span>
+                <span class="share-label">Share</span>
+              </button>
+            </div>
+
+          </article>
+        {% endfor %}
+      </div>
+
+    </div>
+
+    <!-- Right Sidebar Column -->
+    <aside class="feed-sidebar-col">
+      <!-- Movie Agent Widget Card -->
+      <div class="sidebar-widget-card agent-promo-card">
+        <div class="promo-badge">🤖 AI ASSISTANT</div>
+        <h3>Film Intelligence Agent</h3>
+        <p>Get in-depth analysis on any film, see how community members rated it, and discover your next favorite movie.</p>
+        <a href="{{ url_for('agent.index') }}" class="btn btn-small btn-agent-promo">Open Movie Agent</a>
+      </div>
+
+      <!-- Trending Tagged Items Card -->
+      {% if trending_items %}
+        <div class="sidebar-widget-card">
+          <h3 class="widget-title">🔥 Trending Topics</h3>
+          <p class="widget-sub">Most reviewed items across the feed</p>
+          <div class="trending-items-list">
+            {% for ti in trending_items %}
+              <div class="trending-item-row">
+                <span class="trending-icon">
+                  {% if ti['type'] == 'movie' %}🎬{% elif ti['type'] == 'song' %}🎵{% else %}🏆{% endif %}
+                </span>
+                <div class="trending-details">
+                  <span class="trending-name">{{ ti['title'] }}</span>
+                  <span class="trending-count">{{ ti['post_count'] }} {% if ti['post_count'] == 1 %}post{% else %}posts{% endif %}</span>
+                </div>
+                {% if ti['type'] == 'movie' %}
+                  <a href="{{ url_for('agent.index', q=ti['title']) }}" class="btn-ghost btn-xs" title="Ask Agent">🤖</a>
+                {% endif %}
+              </div>
+            {% endfor %}
           </div>
         </div>
-      </li>
-    {% endfor %}
-  </ul>
+      {% endif %}
+
+      <!-- Community Rules & Tips -->
+      <div class="sidebar-widget-card tips-card">
+        <h3 class="widget-title">💡 Feed Guidelines</h3>
+        <ul class="tips-list">
+          <li>Tag items to connect your review with fellow fans.</li>
+          <li>Constructive criticism and deep recommendations are always welcome.</li>
+          <li>Check out the <strong>Movie Agent</strong> to analyze rating trends!</li>
+        </ul>
+      </div>
+    </aside>
+  </div>
 
 </div>
+
+<script>
+  // Quick prompt click handler
+  document.querySelectorAll('.composer-prompt-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      const textarea = document.getElementById('composer-textarea');
+      if (textarea) {
+        textarea.value = this.getAttribute('data-template');
+        textarea.focus();
+      }
+    });
+  });
+
+  // Client-side heart toggle
+  function toggleLike(btn) {
+    const icon = btn.querySelector('.like-icon');
+    const counter = btn.querySelector('.like-counter');
+    const isLiked = btn.classList.toggle('liked');
+    if (isLiked) {
+      icon.textContent = '❤️';
+      counter.textContent = '1';
+    } else {
+      icon.textContent = '🤍';
+      counter.textContent = '';
+    }
+  }
+
+  // Copy post link
+  function copyPostLink(btn) {
+    const label = btn.querySelector('.share-label');
+    navigator.clipboard.writeText(window.location.href).then(() => {
+      label.textContent = 'Copied!';
+      setTimeout(() => { label.textContent = 'Share'; }, 2000);
+    });
+  }
+</script>
 {% endblock %}

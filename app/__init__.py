@@ -19,6 +19,7 @@ def create_app(config_class=Config):
     from app.routes.feed import bp as feed_bp
     from app.routes.settings import bp as settings_bp
     from app.routes.admin import bp as admin_bp
+    from app.routes.agent import bp as agent_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(items_bp)
@@ -26,6 +27,7 @@ def create_app(config_class=Config):
     app.register_blueprint(feed_bp)
     app.register_blueprint(settings_bp)
     app.register_blueprint(admin_bp)
+    app.register_blueprint(agent_bp)
 
     @app.route("/")
     def index():
