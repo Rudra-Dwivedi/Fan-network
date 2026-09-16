@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}AI Movie Agent — मान्यांकः (Maanyankah){% endblock %}
+{% block title %}चित्राङ्ककः (Chitrankakah) — AI Movie Agent{% endblock %}
 {% block content %}
 <div class="container page">
 
@@ -7,8 +7,8 @@
     <div class="agent-title-row">
       <div class="agent-badge-icon">🤖</div>
       <div>
-        <h1 class="agent-main-title">AI Movie & Ratings Agent</h1>
-        <p class="page-sub">Ask anything about movies, analyze community rating distributions on Maanyankah, and get tailored film suggestions.</p>
+        <h1 class="agent-main-title">चित्राङ्ककः <span class="title-sub-english">(Chitrankakah)</span></h1>
+        <p class="page-sub">Your intelligent cinema companion. Ask anything about films, inspect community rating analytics on Maanyankah, and discover what to watch next.</p>
       </div>
     </div>
   </div>
@@ -28,7 +28,7 @@
     <form id="agent-form" class="agent-form-bar">
       <div class="agent-input-wrapper">
         <span class="agent-search-icon">🔍</span>
-        <input type="text" id="agent-query" name="query" value="{{ initial_query or '' }}" placeholder="Ask about a movie, ratings, sentiment, or ask for recommendations..." autocomplete="off" required>
+        <input type="text" id="agent-query" name="query" value="{{ initial_query or '' }}" placeholder="Ask चित्राङ्ककः about a movie, ratings, sentiment, or recommendations..." autocomplete="off" required>
       </div>
       
       {% if catalog_movies %}
@@ -185,8 +185,8 @@
       <!-- Welcome Empty State Card -->
       <div class="agent-welcome-card">
         <div class="welcome-icon">🎬</div>
-        <h3>Welcome to the Maanyankah Film Intelligence Agent</h3>
-        <p>I analyze real viewer ratings, community reactions, and deep film trivia across our catalog. Pick a starter prompt above, choose a movie, or type any query to begin!</p>
+        <h3>नमस्ते! I am चित्राङ्ककः (Chitrankakah)</h3>
+        <p>Your dedicated cinema and ratings intelligence agent. I analyze real viewer ratings, community reactions, and deep film trivia across our catalog. Pick a starter prompt above, choose a movie, or type any query to begin!</p>
       </div>
     {% endif %}
   </div>
@@ -388,3 +388,4 @@
   });
 </script>
 {% endblock %}
+

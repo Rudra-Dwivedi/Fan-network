@@ -172,7 +172,7 @@
 
                 <div class="tagged-item-actions">
                   {% if post.item_type == 'movie' %}
-                    <a href="{{ url_for('agent.index', q=post.item_title) }}" class="btn-ghost btn-xs" title="Ask Movie Agent">🤖 Ask Agent</a>
+                    <a href="{{ url_for('agent.index', q=post.item_title) }}" class="btn-ghost btn-xs" onclick="if(window.openChitrankakah){ window.openChitrankakah('{{ post.item_title|replace('\'', '\\\'') }}'); return false; }" title="चित्राङ्ककः से पूछें">🤖 चित्राङ्ककः</a>
                   {% endif %}
                   <a href="{{ url_for('items.browse') }}" class="btn-ghost btn-xs" title="Rate this item">Rate</a>
                 </div>
@@ -183,7 +183,6 @@
             <div class="feed-card-footer">
               <button type="button" class="post-action-btn like-btn" onclick="toggleLike(this)">
                 <span class="like-icon">🤍</span>
-                <span class="like-label">Like</span>
                 <span class="like-counter"></span>
               </button>
 
@@ -203,10 +202,12 @@
     <aside class="feed-sidebar-col">
       <!-- Movie Agent Widget Card -->
       <div class="sidebar-widget-card agent-promo-card">
-        <div class="promo-badge">🤖 AI ASSISTANT</div>
-        <h3>Film Intelligence Agent</h3>
-        <p>Get in-depth analysis on any film, see how community members rated it, and discover your next favorite movie.</p>
-        <a href="{{ url_for('agent.index') }}" class="btn btn-small btn-agent-promo">Open Movie Agent</a>
+        <div class="promo-badge">🤖 AI AGENT</div>
+        <h3>चित्राङ्ककः (Chitrankakah)</h3>
+        <p>Get in-depth analysis on any film, explore live community rating distributions on मान्यांकः, and ask for smart recommendations.</p>
+        <button type="button" class="btn btn-small btn-agent-promo" onclick="if(window.openChitrankakah){ window.openChitrankakah(); } else { window.location.href='{{ url_for('agent.index') }}'; }">
+          🤖 Ask चित्राङ्ककः
+        </button>
       </div>
 
       <!-- Trending Tagged Items Card -->
@@ -225,7 +226,7 @@
                   <span class="trending-count">{{ ti['post_count'] }} {% if ti['post_count'] == 1 %}post{% else %}posts{% endif %}</span>
                 </div>
                 {% if ti['type'] == 'movie' %}
-                  <a href="{{ url_for('agent.index', q=ti['title']) }}" class="btn-ghost btn-xs" title="Ask Agent">🤖</a>
+                  <a href="{{ url_for('agent.index', q=ti['title']) }}" class="btn-ghost btn-xs" onclick="if(window.openChitrankakah){ window.openChitrankakah('{{ ti['title']|replace('\'', '\\\'') }}'); return false; }" title="Ask चित्राङ्ककः">🤖</a>
                 {% endif %}
               </div>
             {% endfor %}
@@ -239,7 +240,7 @@
         <ul class="tips-list">
           <li>Tag items to connect your review with fellow fans.</li>
           <li>Constructive criticism and deep recommendations are always welcome.</li>
-          <li>Check out the <strong>Movie Agent</strong> to analyze rating trends!</li>
+          <li>Check out <strong>चित्राङ्ककः</strong> (floating at bottom-right) to analyze rating trends!</li>
         </ul>
       </div>
     </aside>
