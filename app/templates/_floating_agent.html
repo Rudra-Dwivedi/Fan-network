@@ -1,3 +1,4 @@
+{% if request.endpoint != 'agent.index' %}
 <!-- Floating AI Agent: चित्राङ्ककः (Chitrankakah) -->
 <div id="floating-agent-container" class="floating-agent-container">
   <!-- Floating Launcher Button -->
@@ -12,7 +13,7 @@
     <!-- Header -->
     <div class="floating-header">
       <div class="floating-header-info">
-        <div class="floating-header-avatar">🎬</div>
+        <div class="floating-header-avatar">🤖</div>
         <div class="floating-header-text">
           <div class="floating-title-row">
             <h3 id="floating-agent-title" class="floating-agent-title">चित्राङ्ककः</h3>
@@ -22,7 +23,8 @@
         </div>
       </div>
       <div class="floating-header-actions">
-        <a href="{{ url_for('agent.index') }}" class="floating-btn-header-action" title="Open full-screen dashboard" aria-label="Open full page">
+        <button type="button" id="floating-agent-reset" class="floating-btn-header-action" title="New conversation (Reset)" aria-label="New conversation">↺</button>
+        <a href="{{ url_for('agent.index') }}" class="floating-btn-header-action" title="Open full-screen AI Studio" aria-label="Open full page">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
         </a>
         <button type="button" id="floating-agent-close" class="floating-btn-header-action" title="Close चित्राङ्ककः" aria-label="Close">✕</button>
@@ -31,7 +33,7 @@
 
     <!-- Quick Prompt Suggestions Bar -->
     <div class="floating-chips-container">
-      <button type="button" class="floating-chip" data-query="Top rated movies on Maanyankah">🏆 Top Rated</button>
+      <button type="button" class="floating-chip" data-query="Highest rated movies on Maanyankah">🏆 Top Rated</button>
       <button type="button" class="floating-chip" data-query="Recommend a sci-fi thriller">🚀 Sci-Fi Pick</button>
       <button type="button" class="floating-chip" data-query="Tell me about Inception">🌀 Inception</button>
       <button type="button" class="floating-chip" data-query="What is the rating of The Dark Knight?">🦇 The Dark Knight</button>
@@ -41,7 +43,7 @@
     <!-- Messages / Stream Area -->
     <div id="floating-messages-stream" class="floating-messages-stream">
       <!-- Default welcome bubble -->
-      <div class="floating-bubble bubble-agent">
+      <div class="floating-bubble bubble-agent" id="floating-welcome-bubble">
         <div class="bubble-avatar">🤖</div>
         <div class="bubble-content">
           <p class="bubble-greeting"><strong>नमस्ते! I am चित्राङ्ककः (Chitrankakah).</strong></p>
@@ -72,6 +74,7 @@
   const triggerBtn = document.getElementById('floating-agent-trigger');
   const win = document.getElementById('floating-agent-window');
   const closeBtn = document.getElementById('floating-agent-close');
+  const resetBtn = document.getElementById('floating-agent-reset');
   const form = document.getElementById('floating-agent-form');
   const input = document.getElementById('floating-agent-input');
   const stream = document.getElementById('floating-messages-stream');
@@ -119,6 +122,30 @@
   }
   if (closeBtn) {
     closeBtn.addEventListener('click', closeWindow);
+  }
+
+  // Reset conversation
+  if (resetBtn) {
+    resetBtn.addEventListener('click', function() {
+      if (stream) {
+        stream.innerHTML = `
+          <div class="floating-bubble bubble-agent" id="floating-welcome-bubble">
+            <div class="bubble-avatar">🤖</div>
+            <div class="bubble-content">
+              <p class="bubble-greeting"><strong>नमस्ते! I am चित्राङ्ककः (Chitrankakah).</strong></p>
+              <p class="bubble-text">Your intelligent cinema & ratings guide on <strong>मान्यांकः</strong>. Ask me about any movie, inspect community ratings & review quotes, or get personalized recommendations!</p>
+              <div class="bubble-actions">
+                <button type="button" class="floating-bubble-chip" data-query="Highest rated movies on Maanyankah">⭐ View Top Ranked Movies</button>
+              </div>
+            </div>
+          </div>
+        `;
+        if (input) {
+          input.value = '';
+          input.focus();
+        }
+      }
+    });
   }
 
   // Close on Escape key
@@ -240,7 +267,8 @@
         </div>
 
         <div class="float-card-actions">
-          <a href="/items/?type=movie" class="float-action-btn">Rate on Browse</a>
+          <button type="button" class="float-action-btn" data-query="Recommend movies similar to ${escapeHtml(m.title)}">🎬 Similar Movies</button>
+          <button type="button" class="float-action-btn" data-query="Why did people rate ${escapeHtml(m.title)} high?">⭐ Consensus</button>
         </div>
       </div>
     `;
@@ -307,8 +335,8 @@
     stream.appendChild(bubble);
     scrollToBottom();
 
-    // Attach listeners to any new prompt chips or ask buttons
-    bubble.querySelectorAll('.floating-chip, .float-btn-ask-item').forEach(btn => {
+    // Attach listeners to any new prompt chips or action buttons
+    bubble.querySelectorAll('.floating-chip, .float-btn-ask-item, .float-action-btn').forEach(btn => {
       btn.addEventListener('click', function() {
         const q = this.getAttribute('data-query') || this.getAttribute('data-q');
         if (q) {
@@ -373,16 +401,19 @@
   }
 
   // Global event delegation for chips inside container
-  container.addEventListener('click', function(e) {
-    const chip = e.target.closest('.floating-chip, .floating-bubble-chip');
-    if (chip) {
-      const q = chip.getAttribute('data-query');
-      if (q) {
-        if (input) input.value = q;
-        submitFloatingQuery(q);
+  if (container) {
+    container.addEventListener('click', function(e) {
+      const chip = e.target.closest('.floating-chip, .floating-bubble-chip, .float-action-btn');
+      if (chip) {
+        const q = chip.getAttribute('data-query');
+        if (q) {
+          if (input) input.value = q;
+          submitFloatingQuery(q);
+        }
       }
-    }
-  });
+    });
+  }
 
 })();
 </script>
+{% endif %}
