@@ -44,7 +44,7 @@
 
         {% if g.user %}
           <a href="{{ url_for('recommend.profile', username=g.user['username']) }}" class="nav-user-link" title="View your profile">
-            <div class="avatar avatar-nav avatar-{{ g.user['id'] % 3 }}">
+            <div class="avatar avatar-nav avatar-{{ g.user['id'] % 3 }} editable-avatar" title="Click to view profile or change photo">
               {% if g.user['avatar_url'] %}
                 <img src="{{ g.user['avatar_url'] }}" alt="{{ g.user['username'] }}">
               {% else %}
@@ -53,7 +53,6 @@
             </div>
             <span class="username">{{ g.user['username'] }}{% if g.user['role'] == 'admin' %} <span class="admin-badge">admin</span>{% endif %}</span>
           </a>
-          <a href="{{ url_for('auth.profile') }}" class="link-muted btn-edit-dp" title="Edit your profile photo & bio">Edit DP</a>
           <a href="{{ url_for('auth.logout') }}" class="link-muted">Log out</a>
         {% else %}
           <a href="{{ url_for('auth.login') }}" class="link-muted">Log in</a>

@@ -65,12 +65,6 @@
       </div>
 
       <div class="public-profile-actions">
-        {% if g.user and g.user['id'] == profile_user['id'] %}
-          <button type="button" class="btn btn-small btn-edit-dp">
-            📷 Edit DP & Bio
-          </button>
-        {% endif %}
-
         {% if g.user and g.user['id'] != profile_user['id'] %}
           {% if is_following %}
             <form method="post" action="{{ url_for('recommend.unfollow', user_id=profile_user['id']) }}">

@@ -289,9 +289,9 @@
     });
   }
 
-  // Bind click event to any editable avatar element
+  // Bind click event to any editable avatar or bio element
   document.addEventListener('click', function(e) {
-    const trigger = e.target.closest('.editable-avatar, .btn-edit-dp, .btn-add-bio');
+    const trigger = e.target.closest('.editable-avatar, .btn-add-bio');
     if (trigger) {
       e.preventDefault();
       const target = trigger.getAttribute('data-target') || 'all';
